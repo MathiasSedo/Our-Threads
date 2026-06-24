@@ -1,0 +1,139 @@
+.voice-recorder {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--parchment-dark);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+}
+
+.voice-mock-label {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 0.6rem;
+}
+
+.voice-mock-textarea {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  width: 100%;
+  resize: vertical;
+}
+
+.record-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid var(--accent-light);
+  color: var(--accent);
+  padding: 0.6rem 1.25rem;
+  border-radius: 3px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.record-btn:hover:not(.recording) {
+  background: var(--accent);
+  color: var(--parchment);
+}
+
+.record-btn.recording {
+  border-color: var(--wedding);
+  color: var(--wedding);
+}
+
+.record-icon {
+  font-size: 0.6rem;
+  color: var(--wedding);
+}
+
+.waveform {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 16px;
+}
+
+.wave-bar {
+  width: 3px;
+  background: var(--wedding);
+  border-radius: 2px;
+  animation: wave 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes wave {
+  from { height: 4px; }
+  to { height: 14px; }
+}
+
+.record-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-light);
+}
+
+.processing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.record-done {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.transcript-label {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.transcript-text {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.record-error {
+  color: var(--wedding);
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.btn-ghost-small {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--ink-light);
+  padding: 0.3rem 0.75rem;
+  border-radius: 3px;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}

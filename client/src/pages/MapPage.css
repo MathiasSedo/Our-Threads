@@ -1,0 +1,275 @@
+.map-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: calc(100vh - 70px);
+  position: relative;
+}
+
+.map-add-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 50;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--accent);
+  color: var(--parchment);
+  border: none;
+  padding: 0.45rem 1rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.map-add-btn:hover { background: var(--ink); }
+
+.map-add-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(44,36,22,0.35);
+  z-index: 500;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 4rem;
+  overflow-y: auto;
+}
+
+.map-add-panel {
+  background: var(--parchment);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin: 0 1rem 2rem;
+}
+
+.add-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: normal;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}
+
+.map-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.map-title-block {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+}
+
+.map-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.map-stats {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.map-tag-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* The map frame — styled like a paper card */
+.map-frame {
+  flex: 1;
+  position: relative;
+  border: 1px solid var(--border);
+  background: #ede8df;
+  min-height: 400px;
+  overflow: hidden;
+}
+
+/* Typewriter-style corner marks */
+.map-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  z-index: 10;
+  pointer-events: none;
+}
+.map-corner.tl { top: 8px; left: 8px; border-top: 1.5px solid var(--ink-light); border-left: 1.5px solid var(--ink-light); }
+.map-corner.tr { top: 8px; right: 8px; border-top: 1.5px solid var(--ink-light); border-right: 1.5px solid var(--ink-light); }
+.map-corner.bl { bottom: 8px; left: 8px; border-bottom: 1.5px solid var(--ink-light); border-left: 1.5px solid var(--ink-light); }
+.map-corner.br { bottom: 8px; right: 8px; border-bottom: 1.5px solid var(--ink-light); border-right: 1.5px solid var(--ink-light); }
+
+.map-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  color: var(--ink-faint);
+  background: #ede8df;
+  z-index: 5;
+  letter-spacing: 0.05em;
+}
+
+.map-leaf {
+  width: 100%;
+  height: 100%;
+}
+
+/* Parchment-tinted Leaflet tiles */
+.leaflet-container {
+  background: #ede8df !important;
+  font-family: var(--font-display) !important;
+}
+
+.map-base-tile {
+  filter: saturate(2.2) hue-rotate(-20deg);
+}
+
+/* City label — quiet and small */
+.map-label-city {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 0.68rem;
+  color: var(--ink-light);
+  text-shadow: 0 0 3px var(--parchment), 0 0 3px var(--parchment);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.map-label-dim {
+  opacity: 0.2;
+}
+
+/* Contact dots */
+.map-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2c2416;
+  border: 1.5px solid #8b5e3c;
+  box-shadow: 0 0 0 2px rgba(139,94,60,0.15);
+  transition: transform 0.15s;
+}
+.map-dot:hover { transform: scale(1.4); }
+.map-dot-wedding { background: #7a3b3b; border-color: #7a3b3b; }
+.map-dot-dim { opacity: 0.15; }
+
+/* Your current location — same shape as a contact dot, just red and smaller */
+.map-dot-you {
+  width: 4px;
+  height: 4px;
+  background: #cc4433;
+  border-color: #cc4433;
+  box-shadow: 0 0 0 1px rgba(204,68,51,0.15);
+  cursor: pointer;
+}
+
+/* Popup card — typewriter note style */
+.map-popup {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  right: 1.5rem;
+  max-width: 340px;
+  background: var(--parchment);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--ink-light);
+  padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+  z-index: 1000;
+  box-shadow: 2px 3px 12px rgba(44,36,22,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.popup-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-family: sans-serif;
+  line-height: 1;
+}
+.popup-close:hover { color: var(--ink); }
+
+.popup-contact + .popup-contact {
+  border-top: 1px solid var(--border);
+  padding-top: 0.9rem;
+}
+
+.popup-name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: normal;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}
+
+.popup-location {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--ink-light);
+  margin-top: 0.1rem;
+}
+
+.popup-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
+
+.popup-story {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--ink);
+  line-height: 1.65;
+  margin-top: 0.35rem;
+}
+
+.popup-contact-info {
+  font-size: 0.78rem;
+  color: var(--ink-light);
+  margin-top: 0.2rem;
+}
+
+.popup-open-page {
+  display: block;
+  width: 100%;
+  margin-top: 0.7rem;
+  padding: 0.5rem 0;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--accent);
+  color: var(--parchment);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.popup-open-page:hover {
+  background: var(--ink);
+}

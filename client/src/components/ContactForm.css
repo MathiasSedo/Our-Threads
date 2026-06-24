@@ -1,0 +1,111 @@
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.story-section {
+  background: var(--parchment-dark);
+  border-radius: 6px;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.story-section textarea {
+  background: transparent;
+  border-color: transparent;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding-left: 0;
+  padding-right: 0;
+  font-size: 1rem;
+}
+
+.story-section textarea:focus {
+  border-bottom-color: var(--accent-light);
+}
+
+.form-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.25rem 0;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.tag-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.custom-tag-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.form-error {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--wedding);
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+}
+
+.btn-primary {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--accent);
+  color: var(--parchment);
+  border: none;
+  padding: 0.65rem 1.5rem;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) { background: var(--ink); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-ghost {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--ink-light);
+  padding: 0.65rem 1.25rem;
+  border-radius: 3px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.btn-ghost:hover {
+  color: var(--ink);
+  border-color: var(--ink-light);
+}
+
+@media (max-width: 500px) {
+  .form-row { grid-template-columns: 1fr; }
+}

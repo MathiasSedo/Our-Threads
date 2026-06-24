@@ -1,0 +1,101 @@
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.5rem;
+  background: var(--parchment);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  text-decoration: none;
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--ink);
+  letter-spacing: 0.05em;
+}
+
+.brand-sub {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+
+.topnav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.topnav a {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.topnav a:hover, .topnav a.active {
+  color: var(--ink);
+}
+
+.topnav a.active {
+  border-bottom: 1px solid var(--accent);
+  padding-bottom: 1px;
+}
+
+.logout-btn {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--ink-faint);
+  padding: 0.3rem 0.75rem;
+  border-radius: 3px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.logout-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink-light);
+}
+
+.main-content {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Map page gets full width and no side padding */
+.main-content:has(.map-page) {
+  max-width: 100%;
+  padding: 1rem 1.25rem;
+}
+
+@media (max-width: 600px) {
+  .main-content { padding: 1rem; }
+  .topbar { padding: 0.75rem 1rem; }
+  .brand-sub { display: none; }
+}

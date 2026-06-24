@@ -1,0 +1,129 @@
+.threads-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.threads-header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-input {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.4rem 0.1rem;
+  color: var(--ink-light);
+}
+
+.search-input:focus {
+  border-bottom-color: var(--accent-light);
+}
+
+.view-toggle {
+  display: flex;
+  border: 1.5px solid var(--ink-light);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--parchment);
+  border: none;
+  color: var(--ink-light);
+  padding: 0.8rem 1.8rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.toggle-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.toggle-btn.active {
+  background: var(--accent);
+  color: var(--parchment);
+}
+
+.tag-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.add-panel {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1.5rem;
+  background: var(--parchment-dark);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.add-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: normal;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}
+
+.add-hint {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--ink-light);
+  margin-top: -0.5rem;
+}
+
+.contacts-count {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.contacts-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.1rem;
+}
+
+@media (max-width: 900px) {
+  .contacts-list { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .contacts-list { grid-template-columns: 1fr; }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--ink-faint);
+  font-family: var(--font-body);
+  line-height: 2;
+}
+
+.loading {
+  text-align: center;
+  padding: 4rem;
+  font-family: var(--font-body);
+  color: var(--ink-faint);
+}

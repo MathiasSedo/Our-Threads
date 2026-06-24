@@ -1,0 +1,88 @@
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e9e4d8;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: relative;
+  z-index: 1;
+  background: #fbfaf6;
+  clip-path: polygon(
+    0% 2.5%, 8% 0.5%, 16% 2.8%, 24% 0.7%, 32% 2.3%, 40% 0.5%, 48% 2.6%,
+    56% 0.8%, 64% 2.2%, 72% 0.5%, 80% 2.7%, 88% 0.8%, 96% 2.3%, 100% 0.5%,
+    100% 82%, 91% 88%, 98% 94%, 84% 100%,
+    0% 100%
+  );
+  padding: 2.75rem 2.25rem 2.25rem;
+  box-shadow: 0 10px 35px rgba(44,36,22,0.18);
+}
+
+.auth-brand {
+  text-align: center;
+}
+
+.auth-brand h1 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: normal;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}
+
+.auth-brand p {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  margin-top: 0.25rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 2rem;
+  background: var(--parchment-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.auth-error {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--wedding);
+}
+
+.auth-submit {
+  width: 100%;
+  padding: 0.8rem;
+  font-size: 0.85rem;
+}
+
+.auth-toggle {
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+}
+
+.auth-toggle button {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}

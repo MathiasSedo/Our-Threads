@@ -1,0 +1,21 @@
+node_modules/
+.DS_Store
+dist/
+*.bak
+
+# secrets
+.env
+.env.local
+
+# local sqlite database
+our-threads.db
+our-threads.db-shm
+our-threads.db-wal
+
+# user uploads
+uploads/*
+!uploads/.gitkeep
+
+# local tooling/notes, not app code
+.claude/
+memory/

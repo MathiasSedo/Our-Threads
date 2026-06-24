@@ -1,0 +1,81 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --parchment: #f5f0e8;
+  --parchment-dark: #ede7d8;
+  --ink: #2c2416;
+  --ink-light: #5a4f3c;
+  --ink-faint: #9a8f7a;
+  --accent: #8b5e3c;
+  --accent-light: #c4956a;
+  --wedding: #7a3b3b;
+  --wedding-bg: #f5e8e8;
+  --border: #d4c9b0;
+  --herb: #5c6b4a;
+  --herb-light: #8a9a73;
+  --card-shadow: 0 1px 4px rgba(44,36,22,0.08);
+
+  --font-display: 'Courier Prime', monospace;
+  --font-body: 'Courier Prime', monospace;
+}
+
+html, body {
+  background-color: var(--parchment);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.85;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-display);
+}
+
+input, textarea {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  background: var(--parchment);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--ink);
+  padding: 0.6rem 0.75rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input:focus, textarea:focus {
+  border-color: var(--accent-light);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.85;
+}
+
+label {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--parchment-dark); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
