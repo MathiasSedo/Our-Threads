@@ -132,12 +132,28 @@ export default function ThreadsPage() {
       )}
 
       {view === 'web' ? (
-        <ThreadsWeb
-          contacts={filtered}
-          connections={connections}
-          onConnectionChange={handleConnectionChange}
-          onOpenContact={(id) => { setOpenContactId(id); setView('list'); }}
-        />
+        <>
+          <ThreadsWeb
+            contacts={filtered}
+            connections={connections}
+            onConnectionChange={handleConnectionChange}
+            onOpenContact={(id) => setOpenContactId(id)}
+          />
+          {openContactId != null && contacts.find(c => c.id === openContactId) && (
+            <ContactCard
+              key={openContactId}
+              contact={contacts.find(c => c.id === openContactId)}
+              allContacts={contacts}
+              connections={connections}
+              onUpdate={handleSave}
+              onDelete={handleDelete}
+              onConnectionChange={handleConnectionChange}
+              autoOpen
+              hideTile
+              onClose={() => setOpenContactId(null)}
+            />
+          )}
+        </>
       ) : (
         <>
           <div className="contacts-count">
@@ -162,6 +178,7 @@ export default function ThreadsPage() {
                 onDelete={handleDelete}
                 onConnectionChange={handleConnectionChange}
                 autoOpen={contact.id === openContactId}
+                onClose={() => setOpenContactId(null)}
               />
             ))}
           </div>

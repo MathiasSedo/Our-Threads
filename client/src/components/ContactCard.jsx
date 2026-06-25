@@ -12,7 +12,7 @@ function formatDate(d) {
   return new Date(y, m - 1).toLocaleDateString('en', { month: 'long', year: 'numeric' });
 }
 
-export default function ContactCard({ contact, allContacts = [], connections = [], onUpdate, onDelete, onConnectionChange, autoOpen = false }) {
+export default function ContactCard({ contact, allContacts = [], connections = [], onUpdate, onDelete, onConnectionChange, autoOpen = false, hideTile = false, onClose }) {
   const api = useApi();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -66,42 +66,44 @@ export default function ContactCard({ contact, allContacts = [], connections = [
 
   return (
     <>
-      <button className="page-tile" onClick={() => setOpen(true)}>
-        <span
-          className="page-stamp"
-          aria-hidden="true"
-          style={{ width: `${stampWidth}%`, opacity: stampOpacity, backgroundColor: stampColor }}
-        />
-        <div className="page-top">
-          {contact.date_met && <span className="page-date">{formatDate(contact.date_met)}</span>}
-        </div>
-        <h3 className="page-name">{contact.name}</h3>
-        <p className="page-location">{contact.city?.toUpperCase()} · {contact.country?.toUpperCase()}</p>
-        <div className="page-divider" aria-hidden="true" />
-        {contact.tags?.length > 0 && (
-          <div className="page-tags">
-            {contact.tags.slice(0, 3).map(t => {
-              const isWedding = t.name === 'Invite for wedding';
-              const color = TAG_COLORS[t.name];
-              return (
-                <span
-                  key={t.id}
-                  className={`page-tag ${isWedding ? 'page-tag-wedding' : ''}`}
-                  style={color ? { color } : undefined}
-                >
-                  {t.name}
-                </span>
-              );
-            })}
+      {!hideTile && (
+        <button className="page-tile" onClick={() => setOpen(true)}>
+          <span
+            className="page-stamp"
+            aria-hidden="true"
+            style={{ width: `${stampWidth}%`, opacity: stampOpacity, backgroundColor: stampColor }}
+          />
+          <div className="page-top">
+            {contact.date_met && <span className="page-date">{formatDate(contact.date_met)}</span>}
           </div>
-        )}
-        {contact.how_we_met && <p className="page-story">{contact.how_we_met}</p>}
-      </button>
+          <h3 className="page-name">{contact.name}</h3>
+          <p className="page-location">{contact.city?.toUpperCase()} · {contact.country?.toUpperCase()}</p>
+          <div className="page-divider" aria-hidden="true" />
+          {contact.tags?.length > 0 && (
+            <div className="page-tags">
+              {contact.tags.slice(0, 3).map(t => {
+                const isWedding = t.name === 'Invite for wedding';
+                const color = TAG_COLORS[t.name];
+                return (
+                  <span
+                    key={t.id}
+                    className={`page-tag ${isWedding ? 'page-tag-wedding' : ''}`}
+                    style={color ? { color } : undefined}
+                  >
+                    {t.name}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+          {contact.how_we_met && <p className="page-story">{contact.how_we_met}</p>}
+        </button>
+      )}
 
       {open && (
-        <div className="page-overlay" onClick={() => { setOpen(false); setEditing(false); }}>
+        <div className="page-overlay" onClick={() => { setOpen(false); setEditing(false); onClose?.(); }}>
           <div className="page-detail" onClick={e => e.stopPropagation()}>
-            <button className="page-close" onClick={() => { setOpen(false); setEditing(false); }}>×</button>
+            <button className="page-close" onClick={() => { setOpen(false); setEditing(false); onClose?.(); }}>×</button>
 
             {editing ? (
               <ContactForm
