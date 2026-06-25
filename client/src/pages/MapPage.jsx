@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi.js';
 import TagPill from '../components/TagPill.jsx';
 import ContactForm from '../components/ContactForm.jsx';
@@ -9,7 +9,6 @@ import './MapPage.css';
 
 export default function MapPage() {
   const api = useApi();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const mapRef = useRef(null);
   const leafletRef = useRef(null);
@@ -19,6 +18,7 @@ export default function MapPage() {
   const [allTags, setAllTags] = useState(['All']);
   const [activeTag, setActiveTag] = useState('All');
   const [selected, setSelected] = useState(null);
+  const [expandedIds, setExpandedIds] = useState(new Set());
   const [stats, setStats] = useState({ people: 0, cities: 0, countries: 0 });
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -134,11 +134,10 @@ export default function MapPage() {
     contacts.forEach(contact => {
       if (!contact.lat || !contact.lng) return;
       const isVis = visibleIds.has(contact.id);
-      const isWedding = contact.tags?.some(t => t.name === 'Invite for wedding');
-      const blend = !isWedding ? blendTagColor(contact.tags) : null;
+      const blend = blendTagColor(contact.tags);
       const style = blend ? ` style="border-color:${blend}; box-shadow:0 0 0 2px ${blend}26"` : '';
       const dot = L.divIcon({
-        html: `<div class="map-dot${isWedding ? ' map-dot-wedding' : ''}${!isVis ? ' map-dot-dim' : ''}"${style}></div>`,
+        html: `<div class="map-dot${!isVis ? ' map-dot-dim' : ''}"${style}></div>`,
         className: '', iconSize: [10, 10], iconAnchor: [5, 5],
       });
       const marker = L.marker([contact.lat, contact.lng], { icon: dot }).addTo(leafletRef.current);
@@ -205,21 +204,32 @@ export default function MapPage() {
         {selected && (
           <div className="map-popup">
             <button className="popup-close" onClick={() => setSelected(null)}>×</button>
-            {selected.map(c => (
-              <div key={c.id} className="popup-contact">
-                <h3 className="popup-name">{c.name}</h3>
-                <p className="popup-location">{c.city}, {c.country}</p>
-                {c.tags?.length > 0 && <div className="popup-tags">{c.tags.map(t => <TagPill key={t.id} tag={t} />)}</div>}
-                {c.how_we_met && <p className="popup-story">{c.how_we_met.slice(0, 120)}{c.how_we_met.length > 120 ? '…' : ''}</p>}
-                {c.contact_info && <p className="popup-contact-info">{c.contact_info}</p>}
-                <button
-                  className="popup-open-page"
-                  onClick={() => navigate('/threads', { state: { openContactId: c.id } })}
-                >
-                  Open page
-                </button>
-              </div>
-            ))}
+            {selected.map(c => {
+              const isExpanded = expandedIds.has(c.id);
+              return (
+                <div key={c.id} className="popup-contact">
+                  <h3 className="popup-name">{c.name}</h3>
+                  <p className="popup-location">{c.city}, {c.country}</p>
+                  {c.tags?.length > 0 && <div className="popup-tags">{c.tags.map(t => <TagPill key={t.id} tag={t} />)}</div>}
+                  {c.how_we_met && (
+                    <p className="popup-story">
+                      {isExpanded ? c.how_we_met : `${c.how_we_met.slice(0, 120)}${c.how_we_met.length > 120 ? '…' : ''}`}
+                    </p>
+                  )}
+                  {isExpanded && c.contact_info && <p className="popup-contact-info">{c.contact_info}</p>}
+                  <button
+                    className="popup-open-page"
+                    onClick={() => setExpandedIds(prev => {
+                      const next = new Set(prev);
+                      next.has(c.id) ? next.delete(c.id) : next.add(c.id);
+                      return next;
+                    })}
+                  >
+                    {isExpanded ? 'Close page' : 'Open page'}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

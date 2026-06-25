@@ -305,15 +305,30 @@ export default function ThreadsWeb({ contacts, connections }) {
         onWheel={handleWheel}
       >
         <defs>
-          <pattern id="webWeave" width="70" height="70" patternUnits="userSpaceOnUse">
-            <path d="M0 0 L70 70 M70 0 L0 70" className="web-weave-line" />
-            <circle cx="35" cy="35" r="22" className="web-weave-ring" />
+          <pattern id="webWeaveA" width="70" height="70" patternUnits="userSpaceOnUse">
+            <path
+              d="M0 0 Q52 18 70 70 M70 0 Q52 52 0 70"
+              className="web-weave-line"
+            />
+          </pattern>
+          <pattern
+            id="webWeaveB" width="113" height="113" patternUnits="userSpaceOnUse"
+            patternTransform="rotate(31)"
+          >
+            <path
+              d="M0 0 Q70 95 113 113 M113 0 Q43 18 0 113"
+              className="web-weave-line"
+            />
           </pattern>
         </defs>
         <g transform={`translate(${view.x}, ${view.y}) scale(${view.k})`}>
           <rect
             x={-CANVAS_W} y={-CANVAS_H} width={CANVAS_W * 3} height={CANVAS_H * 3}
-            fill="url(#webWeave)" className="web-weave-bg"
+            fill="url(#webWeaveA)" className="web-weave-bg"
+          />
+          <rect
+            x={-CANVAS_W} y={-CANVAS_H} width={CANVAS_W * 3} height={CANVAS_H * 3}
+            fill="url(#webWeaveB)" className="web-weave-bg"
           />
           {connections.map(cn => {
             const a = nodeMap[cn.contact_id_1];
@@ -346,8 +361,7 @@ export default function ThreadsWeb({ contacts, connections }) {
             const dimmed = isNodeDimmed(node.id);
             const highlighted = isNodeHighlighted(node.id);
             const isMe = node.id === activeId;
-            const isWedding = node.tags?.some(t => t.name === 'Invite for wedding');
-            const tagFill = !isWedding ? blendTagColor(node.tags) : null;
+            const tagFill = blendTagColor(node.tags);
             const wordCount = (node.how_we_met || '').trim().split(/\s+/).filter(Boolean).length
               + (node.encounters || []).reduce((sum, e) => sum + (e.note || '').trim().split(/\s+/).filter(Boolean).length, 0);
             const richness = Math.min(1, wordCount / 40);
@@ -369,7 +383,7 @@ export default function ThreadsWeb({ contacts, connections }) {
                 <circle
                   cx={node.x} cy={node.y} r={NODE_R}
                   fillOpacity={isMe || highlighted ? 1 : fillOpacity}
-                  className={`web-circle ${isMe ? 'web-circle-me' : ''} ${highlighted && !isMe ? 'web-circle-highlight' : ''} ${isWedding ? 'web-circle-wedding' : ''}`}
+                  className={`web-circle ${isMe ? 'web-circle-me' : ''} ${highlighted && !isMe ? 'web-circle-highlight' : ''}`}
                 />
                 <text x={node.x} y={node.y - 4} className="web-name" textAnchor="middle" dominantBaseline="middle">
                   {node.name.split(' ')[0]}

@@ -8,16 +8,10 @@
 }
 
 .web-weave-line {
-  stroke: var(--ink-light);
-  stroke-width: 0.5;
-  opacity: 0.07;
-}
-
-.web-weave-ring {
   fill: none;
   stroke: var(--ink-light);
-  stroke-width: 0.5;
-  opacity: 0.05;
+  stroke-width: 0.4;
+  opacity: 0.115;
 }
 
 .web-weave-bg {
@@ -41,7 +35,7 @@
 }
 
 .web-line {
-  stroke: var(--herb-light);
+  stroke: var(--ink-light);
   stroke-width: 1.5;
   stroke-dasharray: 4 3;
   opacity: 0.55;
@@ -49,7 +43,7 @@
 }
 
 .web-line-active {
-  stroke: var(--herb);
+  stroke: var(--ink);
   stroke-width: 2;
   stroke-dasharray: none;
   opacity: 1;
@@ -145,10 +139,6 @@
   fill: var(--parchment-dark);
 }
 
-.web-circle-wedding {
-  fill: var(--wedding);
-}
-
 .web-name {
   font-family: var(--font-display);
   font-size: 9px;
@@ -165,7 +155,7 @@
 .web-city {
   font-family: var(--font-body);
   font-size: 7.5px;
-  fill: var(--herb);
+  fill: var(--ink-light);
   pointer-events: none;
 }
 

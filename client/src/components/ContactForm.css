@@ -4,6 +4,28 @@
   gap: 1.25rem;
 }
 
+.location-picker {
+  background: var(--parchment-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.location-picker-label {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--ink-light);
+  margin-bottom: 0.25rem;
+}
+
+.location-option {
+  text-align: left;
+  justify-content: flex-start;
+}
+
 .story-section {
   background: var(--parchment-dark);
   border-radius: 6px;

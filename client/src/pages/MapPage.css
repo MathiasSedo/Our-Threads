@@ -170,7 +170,6 @@
   transition: transform 0.15s;
 }
 .map-dot:hover { transform: scale(1.4); }
-.map-dot-wedding { background: #7a3b3b; border-color: #7a3b3b; }
 .map-dot-dim { opacity: 0.15; }
 
 /* Your current location — same shape as a contact dot, just red and smaller */

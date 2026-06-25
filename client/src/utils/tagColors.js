@@ -14,15 +14,27 @@ function rgbToHex(r, g, b) {
   return `#${c(r)}${c(g)}${c(b)}`;
 }
 
+// Screen blend, per channel — mixes colors as overlapping light rather than
+// paint, so combinations stay luminous instead of muddying toward gray.
+function screen(a, b) {
+  return 255 - ((255 - a) * (255 - b)) / 255;
+}
+
 // Blends the colors of a contact's tags (excluding the wedding tag, which stays
-// exclusively red) into a single nuance — multiple tags average into a mixed hue.
+// exclusively red) into a single nuance — multiple tags glow together like
+// overlapping washes of light rather than averaging like paint.
 export function blendTagColor(tags = []) {
   const colors = tags
     .filter(t => t.name !== 'Invite for wedding')
     .map(t => TAG_COLORS[t.name])
     .filter(Boolean);
   if (!colors.length) return null;
+  if (colors.length === 1) return colors[0];
   const rgbs = colors.map(hexToRgb);
-  const sum = rgbs.reduce((a, c) => ({ r: a.r + c.r, g: a.g + c.g, b: a.b + c.b }), { r: 0, g: 0, b: 0 });
-  return rgbToHex(sum.r / rgbs.length, sum.g / rgbs.length, sum.b / rgbs.length);
+  const mixed = rgbs.reduce((a, c) => ({
+    r: screen(a.r, c.r),
+    g: screen(a.g, c.g),
+    b: screen(a.b, c.b),
+  }));
+  return rgbToHex(mixed.r, mixed.g, mixed.b);
 }

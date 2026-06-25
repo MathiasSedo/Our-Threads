@@ -4,7 +4,7 @@ import TagPill from './TagPill.jsx';
 import AutocompleteInput from './AutocompleteInput.jsx';
 import VoiceRecorder from './VoiceRecorder.jsx';
 import { getCountrySuggestions, getCitySuggestions } from '../hooks/useGeo.js';
-import { geocode } from '../utils/geocode.js';
+import { geocodeCandidates } from '../utils/geocode.js';
 import './ContactForm.css';
 
 const CORE_TAGS = ['Visit', 'Work', 'Family', 'Invite for wedding'];
@@ -24,6 +24,7 @@ export default function ContactForm({ initial = {}, onSave, onCancel }) {
   const [customTag, setCustomTag] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [locationOptions, setLocationOptions] = useState(null);
 
   function set(field) {
     return (e) => setForm(f => ({ ...f, [field]: e.target.value }));
@@ -45,6 +46,10 @@ export default function ContactForm({ initial = {}, onSave, onCancel }) {
     setCustomTag('');
   }
 
+  function sameSpot(a, b) {
+    return Math.abs(a.lat - b.lat) < 0.01 && Math.abs(a.lng - b.lng) < 0.01;
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
@@ -54,16 +59,41 @@ export default function ContactForm({ initial = {}, onSave, onCancel }) {
     }
     setSaving(true);
     try {
-      const coords = await geocode(form.city, form.country);
-      if (!coords) {
-        setError("Couldn't find that city on the map — check the spelling and try again.");
+      const locationUnchanged = initial.id
+        && form.city === initial.city
+        && form.country === initial.country
+        && initial.lat != null && initial.lng != null;
+      if (locationUnchanged) {
+        await finishSave({ lat: initial.lat, lng: initial.lng });
         return;
       }
+      const candidates = await geocodeCandidates(form.city, form.country);
+      if (candidates.length === 0) {
+        setError("Couldn't find that city on the map — check the spelling and try again.");
+        setSaving(false);
+        return;
+      }
+      if (candidates.length > 1 && !candidates.every(c => sameSpot(c, candidates[0]))) {
+        setLocationOptions(candidates);
+        setSaving(false);
+        return;
+      }
+      await finishSave(candidates[0]);
+    } catch (err) {
+      setError(err.message);
+      setSaving(false);
+    }
+  }
+
+  async function finishSave(coords) {
+    setLocationOptions(null);
+    setSaving(true);
+    try {
       const result = initial.id
         ? await api.put(`/contacts/${initial.id}`, form)
         : await api.post('/contacts', form);
       api.patch(`/contacts/${result.id}/location`, coords).catch(() => {});
-      onSave({ ...result, ...coords });
+      onSave({ ...result, lat: coords.lat, lng: coords.lng });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -172,6 +202,25 @@ export default function ContactForm({ initial = {}, onSave, onCancel }) {
           <button type="button" className="btn-ghost" onClick={addCustomTag}>Add</button>
         </div>
       </div>
+
+      {locationOptions && (
+        <div className="location-picker">
+          <p className="location-picker-label">
+            More than one {form.city} in {form.country} — which one did you mean?
+          </p>
+          {locationOptions.map((c, i) => (
+            <button
+              key={i}
+              type="button"
+              className="btn-ghost location-option"
+              onClick={() => finishSave(c)}
+            >
+              {c.name}{c.admin2 ? `, ${c.admin2}` : ''}{c.admin1 && c.admin1 !== c.admin2 ? `, ${c.admin1}` : ''}
+            </button>
+          ))}
+          <button type="button" className="btn-ghost" onClick={() => setLocationOptions(null)}>Cancel</button>
+        </div>
+      )}
 
       {error && <p className="form-error">{error}</p>}
 
