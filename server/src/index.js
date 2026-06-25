@@ -16,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const upload = multer({ dest: path.join(__dirname, '../../uploads/') });
 
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: process.env.NODE_ENV === 'production' ? true : 'http://localhost:5173', credentials: true }));
 app.use(express.json());
 
 // Auth
@@ -46,6 +46,14 @@ app.delete('/api/connections/:id', requireAuth, deleteConnection);
 
 // Voice
 app.post('/api/voice', requireAuth, upload.single('audio'), processVoice);
+
+// In production, the client is built into client/dist and served by this
+// same server — one process, one URL, no separate frontend host needed.
+if (process.env.NODE_ENV === 'production') {
+  const clientDist = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientDist));
+  app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+}
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Our Threads server running on :${PORT}`));
