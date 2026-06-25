@@ -136,6 +136,7 @@ export default function ThreadsPage() {
           contacts={filtered}
           connections={connections}
           onConnectionChange={handleConnectionChange}
+          onOpenContact={(id) => { setOpenContactId(id); setView('list'); }}
         />
       ) : (
         <>

@@ -68,7 +68,7 @@ function runForceLayout(nodes, connections, w, h, iterations = 220) {
   return pos;
 }
 
-export default function ThreadsWeb({ contacts, connections }) {
+export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
   const svgRef = useRef(null);
   const posRef = useRef(loadPositions()); // id -> {x,y} in canvas space, persisted across reloads
   const loadedPositionsRef = useRef(null); // snapshot of positions as they were when this page was loaded
@@ -175,8 +175,12 @@ export default function ThreadsWeb({ contacts, connections }) {
 
   function handleNodeMouseDown(e, node) {
     e.stopPropagation();
-    const world = toWorldPoint(toLocalPoint(e));
-    dragRef.current = { id: node.id, dx: world.x - node.x, dy: world.y - node.y };
+    const local = toLocalPoint(e);
+    const world = toWorldPoint(local);
+    dragRef.current = {
+      id: node.id, dx: world.x - node.x, dy: world.y - node.y,
+      startX: local.x, startY: local.y, moved: false,
+    };
     setHovered(node.id);
   }
 
@@ -187,8 +191,12 @@ export default function ThreadsWeb({ contacts, connections }) {
 
   const handleMouseMove = useCallback((e) => {
     if (dragRef.current) {
-      const world = toWorldPoint(toLocalPoint(e));
-      const { id, dx, dy } = dragRef.current;
+      const local = toLocalPoint(e);
+      const { id, dx, dy, startX, startY } = dragRef.current;
+      if (Math.hypot(local.x - startX, local.y - startY) > 4) {
+        dragRef.current.moved = true;
+      }
+      const world = toWorldPoint(local);
       const next = { x: world.x - dx, y: world.y - dy };
       posRef.current[id] = next;
       setNodes(prev => prev.map(n => n.id === id ? { ...n, ...next } : n));
@@ -217,9 +225,14 @@ export default function ThreadsWeb({ contacts, connections }) {
 
   function handleMouseUp() {
     if (dragRef.current) {
+      const { id, moved } = dragRef.current;
       dragRef.current = null;
       setHovered(null);
-      savePositions(posRef.current);
+      if (moved) {
+        savePositions(posRef.current);
+      } else {
+        onOpenContact?.(id);
+      }
     }
     if (lineDragRef.current) {
       lineDragRef.current = null;
