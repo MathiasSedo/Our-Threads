@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useApi } from '../hooks/useApi.js';
 import TagPill from './TagPill.jsx';
 import AutocompleteInput from './AutocompleteInput.jsx';
-import VoiceRecorder from './VoiceRecorder.jsx';
 import { getCountrySuggestions, getCitySuggestions } from '../hooks/useGeo.js';
 import { geocodeCandidates } from '../utils/geocode.js';
 import './ContactForm.css';
@@ -101,20 +100,9 @@ export default function ContactForm({ initial = {}, onSave, onCancel }) {
     }
   }
 
-  function handleExtracted(extracted) {
-    setForm(f => ({
-      ...f,
-      ...Object.fromEntries(Object.entries(extracted || {}).filter(([k, v]) => v && k !== 'suggested_tags')),
-      tags: extracted?.suggested_tags?.length
-        ? [...new Set([...f.tags, ...extracted.suggested_tags])]
-        : f.tags,
-    }));
-  }
-
   return (
     <form className="contact-form" onSubmit={handleSubmit}>
       <div className="form-section story-section">
-        <VoiceRecorder onExtracted={handleExtracted} />
         <div className="form-group">
           <label>What is the story?</label>
           <textarea

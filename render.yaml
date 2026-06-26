@@ -10,10 +10,6 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
 # Note: the free plan has no persistent disk, so the SQLite file resets on
 # every redeploy (but survives idle spin-down in between). To keep data
 # permanently, upgrade to a paid instance and add a `disk:` block here
