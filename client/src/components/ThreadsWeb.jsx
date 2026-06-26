@@ -81,6 +81,7 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
   const dragRef = useRef(null);
   const panRef = useRef(null);
   const lineDragRef = useRef(null);
+  const pinchRef = useRef(null);
 
   useEffect(() => {
     function measure() {
@@ -160,12 +161,16 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
     : [];
 
   // client point -> local view pixel point
-  function toLocalPoint(e) {
+  function localPointFromClient(clientX, clientY) {
     const rect = svgRef.current.getBoundingClientRect();
     return {
-      x: (e.clientX - rect.left) * (viewSize.w / rect.width),
-      y: (e.clientY - rect.top) * (viewSize.h / rect.height),
+      x: (clientX - rect.left) * (viewSize.w / rect.width),
+      y: (clientY - rect.top) * (viewSize.h / rect.height),
     };
+  }
+
+  function toLocalPoint(e) {
+    return localPointFromClient(e.clientX, e.clientY);
   }
 
   // local view point -> canvas/world point (inverse of pan/zoom transform)
@@ -184,14 +189,44 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
     setHovered(node.id);
   }
 
+  function handleNodeTouchStart(e, node) {
+    e.stopPropagation();
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const local = localPointFromClient(t.clientX, t.clientY);
+    const world = toWorldPoint(local);
+    dragRef.current = {
+      id: node.id, dx: world.x - node.x, dy: world.y - node.y,
+      startX: local.x, startY: local.y, moved: false,
+    };
+    setHovered(node.id);
+  }
+
   function handleBackgroundMouseDown(e) {
     const local = toLocalPoint(e);
     panRef.current = { startX: local.x, startY: local.y, startViewX: view.x, startViewY: view.y };
   }
 
-  const handleMouseMove = useCallback((e) => {
+  function handleBackgroundTouchStart(e) {
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      const local = localPointFromClient(t.clientX, t.clientY);
+      panRef.current = { startX: local.x, startY: local.y, startViewX: view.x, startViewY: view.y };
+    } else if (e.touches.length === 2) {
+      panRef.current = null;
+      const [t1, t2] = e.touches;
+      const p1 = localPointFromClient(t1.clientX, t1.clientY);
+      const p2 = localPointFromClient(t2.clientX, t2.clientY);
+      pinchRef.current = {
+        startDist: Math.hypot(p2.x - p1.x, p2.y - p1.y),
+        startMid: { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 },
+        startView: { ...view },
+      };
+    }
+  }
+
+  const applyPointerMove = useCallback((local) => {
     if (dragRef.current) {
-      const local = toLocalPoint(e);
       const { id, dx, dy, startX, startY } = dragRef.current;
       if (Math.hypot(local.x - startX, local.y - startY) > 4) {
         dragRef.current.moved = true;
@@ -204,7 +239,7 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
     }
     if (lineDragRef.current) {
       const { id, a, b } = lineDragRef.current;
-      const world = toWorldPoint(toLocalPoint(e));
+      const world = toWorldPoint(local);
       const dx = b.x - a.x, dy = b.y - a.y;
       const dist = Math.hypot(dx, dy) || 1;
       const nx = -dy / dist, ny = dx / dist;
@@ -217,13 +252,16 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
       return;
     }
     if (panRef.current) {
-      const local = toLocalPoint(e);
       const { startX, startY, startViewX, startViewY } = panRef.current;
       setView(v => ({ ...v, x: startViewX + (local.x - startX), y: startViewY + (local.y - startY) }));
     }
   }, [view, viewSize]);
 
-  function handleMouseUp() {
+  const handleMouseMove = useCallback((e) => {
+    applyPointerMove(toLocalPoint(e));
+  }, [applyPointerMove]);
+
+  function finishPointerInteraction() {
     if (dragRef.current) {
       const { id, moved } = dragRef.current;
       dragRef.current = null;
@@ -239,6 +277,40 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
       saveBends(bendsRef.current);
     }
     panRef.current = null;
+  }
+
+  function handleMouseUp() {
+    finishPointerInteraction();
+  }
+
+  const handleTouchMove = useCallback((e) => {
+    if (pinchRef.current && e.touches.length === 2) {
+      e.preventDefault();
+      const [t1, t2] = e.touches;
+      const p1 = localPointFromClient(t1.clientX, t1.clientY);
+      const p2 = localPointFromClient(t2.clientX, t2.clientY);
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1;
+      const mid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+      const { startDist, startMid, startView } = pinchRef.current;
+      const newK = Math.max(0.25, Math.min(3, startView.k * (dist / startDist)));
+      const worldBefore = { x: (startMid.x - startView.x) / startView.k, y: (startMid.y - startView.y) / startView.k };
+      setView({
+        k: newK,
+        x: mid.x - worldBefore.x * newK,
+        y: mid.y - worldBefore.y * newK,
+      });
+      return;
+    }
+    if (e.touches.length === 1) {
+      e.preventDefault();
+      const t = e.touches[0];
+      applyPointerMove(localPointFromClient(t.clientX, t.clientY));
+    }
+  }, [applyPointerMove]);
+
+  function handleTouchEnd(e) {
+    if (e.touches.length < 2) pinchRef.current = null;
+    if (e.touches.length === 0) finishPointerInteraction();
   }
 
   function handleLineMouseDown(e, cn, a, b) {
@@ -281,11 +353,17 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('touchcancel', handleTouchEnd);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [handleMouseMove]);
+  }, [handleMouseMove, handleTouchMove]);
 
   function handleCluster() {
     const result = runForceLayout(nodes, connections, CANVAS_W, CANVAS_H);
@@ -315,6 +393,7 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
         viewBox={`0 0 ${viewSize.w} ${viewSize.h}`}
         onMouseLeave={() => { if (!dragRef.current) setHovered(null); panRef.current = null; }}
         onMouseDown={handleBackgroundMouseDown}
+        onTouchStart={handleBackgroundTouchStart}
         onWheel={handleWheel}
       >
         <defs>
@@ -365,6 +444,7 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
                   d={d}
                   className="web-line-hit"
                   onMouseDown={(e) => handleLineMouseDown(e, cn, a, b)}
+                  onTouchStart={(e) => { if (e.touches.length === 1) { e.stopPropagation(); lineDragRef.current = { id: cn.id, a, b }; } }}
                 />
               </g>
             );
@@ -391,6 +471,7 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
                 onMouseEnter={() => !dragRef.current && setHovered(node.id)}
                 onMouseLeave={() => !dragRef.current && setHovered(null)}
                 onMouseDown={(e) => handleNodeMouseDown(e, node)}
+                onTouchStart={(e) => handleNodeTouchStart(e, node)}
               >
                 <circle cx={node.x} cy={node.y} r={NODE_R} className="web-circle-mask" />
                 <circle
