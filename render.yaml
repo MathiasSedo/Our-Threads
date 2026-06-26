@@ -10,7 +10,9 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
-# Note: the free plan has no persistent disk, so the SQLite file resets on
-# every redeploy (but survives idle spin-down in between). To keep data
-# permanently, upgrade to a paid instance and add a `disk:` block here
-# mounting at e.g. /var/data, with DB_PATH=/var/data/our-threads.db.
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
+# Data lives in Turso (free, hosted, persistent), not on Render's own disk —
+# so it survives redeploys even on the free plan.
