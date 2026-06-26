@@ -2,11 +2,15 @@ import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 export async function processVoice(req, res) {
   if (!req.file) return res.status(400).json({ error: 'No audio file uploaded' });
+  if (!process.env.OPENAI_API_KEY || !process.env.ANTHROPIC_API_KEY) {
+    if (req.file?.path) fs.unlink(req.file.path, () => {});
+    return res.status(503).json({ error: 'Voice processing is not configured on this server.' });
+  }
+
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   try {
     // Transcribe with Whisper
