@@ -8,7 +8,7 @@ import './ContactForm.css';
 
 const CORE_TAGS = ['Visit', 'Work', 'Family', 'Invite for wedding'];
 
-export default function ContactForm({ initial = {}, onSave, onCancel }) {
+export default function ContactForm({ initial = {}, onSave, onCancel, allContacts = [], onConnectionsCreated }) {
   const api = useApi();
   const [form, setForm] = useState({
     name: '',
@@ -24,6 +24,22 @@ export default function ContactForm({ initial = {}, onSave, onCancel }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [locationOptions, setLocationOptions] = useState(null);
+  const [connectTo, setConnectTo] = useState([]);
+  const [connectSelect, setConnectSelect] = useState('');
+
+  const isNew = !initial.id;
+  const connectAvailable = allContacts.filter(c => !connectTo.some(t => t.id === c.id));
+
+  function addConnectTo() {
+    if (!connectSelect) return;
+    const target = allContacts.find(c => c.id === parseInt(connectSelect));
+    if (target) setConnectTo(prev => [...prev, target]);
+    setConnectSelect('');
+  }
+
+  function removeConnectTo(id) {
+    setConnectTo(prev => prev.filter(c => c.id !== id));
+  }
 
   function set(field) {
     return (e) => setForm(f => ({ ...f, [field]: e.target.value }));
@@ -92,6 +108,18 @@ export default function ContactForm({ initial = {}, onSave, onCancel }) {
         ? await api.put(`/contacts/${initial.id}`, form)
         : await api.post('/contacts', form);
       api.patch(`/contacts/${result.id}/location`, coords).catch(() => {});
+
+      if (isNew && connectTo.length) {
+        const created = [];
+        for (const target of connectTo) {
+          try {
+            const cn = await api.post('/connections', { contact_id_1: result.id, contact_id_2: target.id });
+            created.push({ ...cn, name_1: result.name, name_2: target.name });
+          } catch { /* already connected or invalid — skip */ }
+        }
+        if (created.length) onConnectionsCreated?.(created);
+      }
+
       onSave({ ...result, lat: coords.lat, lng: coords.lng });
     } catch (err) {
       setError(err.message);
@@ -190,6 +218,33 @@ export default function ContactForm({ initial = {}, onSave, onCancel }) {
           <button type="button" className="btn-ghost" onClick={addCustomTag}>Add</button>
         </div>
       </div>
+
+      {isNew && allContacts.length > 0 && (
+        <div className="form-group">
+          <label>Threads woven to this one</label>
+          {connectTo.length > 0 && (
+            <ul className="connections-list">
+              {connectTo.map(c => (
+                <li key={c.id} className="connection-item">
+                  <span className="connection-stitch" aria-hidden="true" />
+                  <span className="connection-name">{c.name}</span>
+                  <span className="connection-loc">{c.city}</span>
+                  <button type="button" className="encounter-del" onClick={() => removeConnectTo(c.id)}>×</button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {connectAvailable.length > 0 && (
+            <div className="connection-add">
+              <select value={connectSelect} onChange={e => setConnectSelect(e.target.value)} className="connection-select">
+                <option value="">Tie a thread to...</option>
+                {connectAvailable.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <button type="button" className="btn-ghost" onClick={addConnectTo} disabled={!connectSelect}>Tie thread</button>
+            </div>
+          )}
+        </div>
+      )}
 
       {locationOptions && (
         <div className="location-picker">

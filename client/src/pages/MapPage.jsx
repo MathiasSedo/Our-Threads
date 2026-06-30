@@ -191,7 +191,7 @@ export default function MapPage() {
         <div className="map-add-overlay">
           <div className="map-add-panel">
             <h2 className="add-title">Add a new thread</h2>
-            <ContactForm onSave={handleSave} onCancel={() => setAdding(false)} />
+            <ContactForm onSave={handleSave} onCancel={() => setAdding(false)} allContacts={contacts} />
           </div>
         </div>
       )}

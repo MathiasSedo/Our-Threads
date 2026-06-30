@@ -127,7 +127,12 @@ export default function ThreadsPage() {
       {adding && (
         <div className="add-panel">
           <h2 className="add-title">Add a new thread</h2>
-          <ContactForm onSave={handleSave} onCancel={() => setAdding(false)} />
+          <ContactForm
+            onSave={handleSave}
+            onCancel={() => setAdding(false)}
+            allContacts={contacts}
+            onConnectionsCreated={(rows) => setConnections(prev => [...prev, ...rows])}
+          />
         </div>
       )}
 
