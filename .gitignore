@@ -19,3 +19,4 @@ uploads/*
 # local tooling/notes, not app code
 .claude/
 memory/
+tmp/

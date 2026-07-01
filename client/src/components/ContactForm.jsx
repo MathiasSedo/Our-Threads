@@ -8,7 +8,7 @@ import './ContactForm.css';
 
 const CORE_TAGS = ['Visit', 'Work', 'Family', 'Invite for wedding'];
 
-export default function ContactForm({ initial = {}, onSave, onCancel, allContacts = [], onConnectionsCreated }) {
+export default function ContactForm({ initial = {}, onSave, onCancel, allContacts = [], onConnectionsCreated, manualCoords = null }) {
   const api = useApi();
   const [form, setForm] = useState({
     name: '',
@@ -74,6 +74,11 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
     }
     setSaving(true);
     try {
+      // Manual pin placement takes priority
+      if (manualCoords) {
+        await finishSave(manualCoords);
+        return;
+      }
       const locationUnchanged = initial.id
         && form.city === initial.city
         && form.country === initial.country
@@ -84,12 +89,7 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
       }
       const candidates = await geocodeCandidates(form.city, form.country);
       if (candidates.length === 0) {
-        setError("Couldn't find that city on the map — check the spelling and try again.");
-        setSaving(false);
-        return;
-      }
-      if (candidates.length > 1 && !candidates.every(c => sameSpot(c, candidates[0]))) {
-        setLocationOptions(candidates);
+        setError("Couldn't find that city — check spelling, or use ⊕ Pin location on the map.");
         setSaving(false);
         return;
       }
@@ -161,7 +161,7 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
           <AutocompleteInput
             value={form.city}
             onChange={v => setForm(f => ({ ...f, city: v }))}
-            getSuggestions={getCitySuggestions}
+            getSuggestions={q => getCitySuggestions(q, form.country)}
             placeholder="City"
             required
           />
