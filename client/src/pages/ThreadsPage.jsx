@@ -32,17 +32,19 @@ export default function ThreadsPage() {
   const CORE_ORDER = ['Visit', 'Work', 'Family', 'Invite for wedding'];
 
   useEffect(() => {
-    Promise.all([api.get('/contacts'), api.get('/tags'), api.get('/connections')]).then(([c, t, cn]) => {
-      setContacts(c || []);
-      const names = t.map(tag => tag.name);
-      const ordered = [
-        ...CORE_ORDER.filter(n => names.includes(n)),
-        ...names.filter(n => !CORE_ORDER.includes(n)).sort(),
-      ];
-      setAllTags(['All', ...ordered]);
-      setConnections(cn || []);
-      setLoading(false);
-    });
+    Promise.all([api.get('/contacts'), api.get('/tags'), api.get('/connections')])
+      .then(([c, t, cn]) => {
+        setContacts(c || []);
+        const names = (t || []).map(tag => tag.name);
+        const ordered = [
+          ...CORE_ORDER.filter(n => names.includes(n)),
+          ...names.filter(n => !CORE_ORDER.includes(n)).sort(),
+        ];
+        setAllTags(['All', ...ordered]);
+        setConnections(cn || []);
+      })
+      .catch(() => { /* offline — stay with empty state, don't hang */ })
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {

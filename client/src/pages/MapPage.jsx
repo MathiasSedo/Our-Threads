@@ -21,27 +21,29 @@ export default function MapPage() {
   const CORE_ORDER = ['Visit', 'Work', 'Family', 'Invite for wedding'];
 
   useEffect(() => {
-    Promise.all([api.get('/contacts'), api.get('/tags')]).then(([cs, ts]) => {
-      const list = cs || [];
-      const filled = list.map(c => {
-        if (c.lat && c.lng) return c;
-        const coords = lookupCoords(c.city, c.country);
-        if (coords) {
-          api.patch(`/contacts/${c.id}/location`, coords).catch(() => {});
-          return { ...c, ...coords };
-        }
-        return c;
-      });
-      setContacts(filled);
-      const names = ts.map(t => t.name);
-      const ordered = [
-        ...CORE_ORDER.filter(n => names.includes(n)),
-        ...names.filter(n => !CORE_ORDER.includes(n)).sort(),
-      ];
-      setAllTags(['All', ...ordered]);
-      updateStats(filled);
-      setLoading(false);
-    });
+    Promise.all([api.get('/contacts'), api.get('/tags')])
+      .then(([cs, ts]) => {
+        const list = cs || [];
+        const filled = list.map(c => {
+          if (c.lat && c.lng) return c;
+          const coords = lookupCoords(c.city, c.country);
+          if (coords) {
+            api.patch(`/contacts/${c.id}/location`, coords).catch(() => {});
+            return { ...c, ...coords };
+          }
+          return c;
+        });
+        setContacts(filled);
+        const names = (ts || []).map(t => t.name);
+        const ordered = [
+          ...CORE_ORDER.filter(n => names.includes(n)),
+          ...names.filter(n => !CORE_ORDER.includes(n)).sort(),
+        ];
+        setAllTags(['All', ...ordered]);
+        updateStats(filled);
+      })
+      .catch(() => { /* offline — show empty map, don't hang */ })
+      .finally(() => setLoading(false));
   }, []);
 
   function updateStats(list) {
