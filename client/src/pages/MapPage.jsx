@@ -22,6 +22,8 @@ export default function MapPage() {
   const [stats, setStats] = useState({ people: 0, cities: 0, countries: 0 });
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [placingPin, setPlacingPin] = useState(false);
+  const [manualCoords, setManualCoords] = useState(null);
 
   const CORE_ORDER = ['Visit', 'Work', 'Family', 'Invite for wedding'];
 
@@ -155,6 +157,27 @@ export default function MapPage() {
   function handleSave(contact) {
     setContacts(prev => [contact, ...prev]);
     setAdding(false);
+    setManualCoords(null);
+  }
+
+  async function startPlacingPin() {
+    const L = (await import('leaflet')).default;
+    if (!leafletRef.current) return;
+    setPlacingPin(true);
+    leafletRef.current.getContainer().style.cursor = 'crosshair';
+    leafletRef.current.once('click', e => {
+      setManualCoords({ lat: Math.round(e.latlng.lat * 100) / 100, lng: Math.round(e.latlng.lng * 100) / 100 });
+      setPlacingPin(false);
+      setAdding(true);
+      leafletRef.current.getContainer().style.cursor = '';
+    });
+  }
+
+  function cancelPlacingPin() {
+    setPlacingPin(false);
+    if (leafletRef.current) leafletRef.current.getContainer().style.cursor = '';
+    // remove the pending once-click listener by firing a dummy (safest: just re-init)
+    leafletRef.current?.off('click');
   }
 
   return (
@@ -173,13 +196,31 @@ export default function MapPage() {
         </div>
       </div>
 
-      <button className="map-add-btn" onClick={() => setAdding(true)}>+ Add</button>
+      <div className="map-actions">
+        <button className="map-add-btn" onClick={() => { setManualCoords(null); setAdding(true); }}>+ Add</button>
+        <button
+          className={`map-pin-btn${placingPin ? ' active' : ''}`}
+          onClick={placingPin ? cancelPlacingPin : startPlacingPin}
+        >
+          {placingPin ? 'Tap the map…' : '⊕ Pin location'}
+        </button>
+      </div>
 
       {adding && (
         <div className="map-add-overlay">
           <div className="map-add-panel">
             <h2 className="add-title">Add a new thread</h2>
-            <ContactForm onSave={handleSave} onCancel={() => setAdding(false)} allContacts={contacts} />
+            {manualCoords && (
+              <p className="pin-coords-note">
+                Pinned at {manualCoords.lat.toFixed(2)}°, {manualCoords.lng.toFixed(2)}°
+              </p>
+            )}
+            <ContactForm
+              onSave={handleSave}
+              onCancel={() => { setAdding(false); setManualCoords(null); }}
+              allContacts={contacts}
+              manualCoords={manualCoords}
+            />
           </div>
         </div>
       )}
