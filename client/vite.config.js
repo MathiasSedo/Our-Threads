@@ -21,7 +21,7 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^\/api\//,
+            urlPattern: /\/api\//,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
