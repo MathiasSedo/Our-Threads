@@ -74,6 +74,7 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
   const loadedPositionsRef = useRef(null); // snapshot of positions as they were when this page was loaded
   const [nodes, setNodes] = useState([]);
   const [hovered, setHovered] = useState(null);
+  const [focused, setFocused] = useState(null);
   const [viewSize, setViewSize] = useState({ w: 800, h: 520 });
   const [view, setView] = useState({ x: 0, y: 0, k: 1 }); // pan/zoom transform
   const [bends, setBends] = useState(loadBends()); // connection id -> control-point offset (canvas units)
@@ -129,7 +130,7 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
   }, [contacts]);
 
   const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
-  const activeId = hovered;
+  const activeId = focused ?? hovered;
 
   const connectedToActive = activeId != null
     ? new Set(
@@ -203,6 +204,7 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
   }
 
   function handleBackgroundMouseDown(e) {
+    setFocused(null);
     const local = toLocalPoint(e);
     panRef.current = { startX: local.x, startY: local.y, startViewX: view.x, startViewY: view.y };
   }
@@ -269,7 +271,11 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
       if (moved) {
         savePositions(posRef.current);
       } else {
-        onOpenContact?.(id);
+        // Click: toggle focus lock; if already focused on this node, open the page
+        setFocused(prev => {
+          if (prev === id) { onOpenContact?.(id); return null; }
+          return id;
+        });
       }
     }
     if (lineDragRef.current) {
@@ -483,7 +489,7 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
                   {node.name.split(' ')[0]}
                 </text>
                 <text x={node.x} y={node.y + 13} className="web-city" textAnchor="middle">
-                  {node.city}
+                  {node.home_city || node.city}
                 </text>
               </g>
             );
@@ -494,11 +500,16 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
       {activeNode && (
         <div className="web-info">
           <span className="web-info-name">{activeNode.name}</span>
-          <span className="web-info-loc">{activeNode.city}, {activeNode.country}</span>
+          <span className="web-info-loc">{activeNode.home_city || activeNode.city}, {activeNode.home_country || activeNode.country}</span>
           {activeConnNames.length > 0
             ? <span className="web-info-conn">— {activeConnNames.join(', ')}</span>
             : <span className="web-info-conn" style={{ opacity: 0.4 }}>no connections yet</span>
           }
+          {focused && (
+            <button className="web-info-open" onClick={() => { onOpenContact?.(focused); setFocused(null); }}>
+              Open page →
+            </button>
+          )}
         </div>
       )}
     </div>

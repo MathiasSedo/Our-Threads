@@ -195,3 +195,17 @@
   color: var(--accent);
   font-size: 0.75rem;
 }
+
+.web-info-open {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 0;
+}
+.web-info-open:hover { opacity: 1; }
