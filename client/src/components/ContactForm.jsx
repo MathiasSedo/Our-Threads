@@ -172,7 +172,11 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
         if (created.length) onConnectionsCreated?.(created);
       }
 
-      onSave({ ...result, lat: coords.lat, lng: coords.lng });
+      onSave({
+        ...result,
+        lat: coords.lat, lng: coords.lng,
+        ...(homeCoords ? { home_lat: homeCoords.lat, home_lng: homeCoords.lng } : {}),
+      });
     } catch (err) {
       setError(err.message);
     } finally {
