@@ -45,6 +45,8 @@ export default function ContactCard({ contact, allContacts = [], connections = [
   const [encounters] = useState(contact.encounters || []);
   const [deleting, setDeleting] = useState(false);
   const [connectingTo, setConnectingTo] = useState('');
+  const [connectSearch, setConnectSearch] = useState('');
+  const [connectOpen, setConnectOpen] = useState(false);
 
   const myConnections = connections.filter(
     cn => cn.contact_id_1 === contact.id || cn.contact_id_2 === contact.id
@@ -78,6 +80,7 @@ export default function ContactCard({ contact, allContacts = [], connections = [
     const target = allContacts.find(c => c.id === parseInt(connectingTo));
     onConnectionChange([...connections, { ...cn, name_1: contact.name, name_2: target?.name }]);
     setConnectingTo('');
+    setConnectSearch('');
   }
 
   async function removeConnection(cnId) {
@@ -185,10 +188,32 @@ export default function ContactCard({ contact, allContacts = [], connections = [
                   ) : <p className="encounter-empty">No threads tying this person to another, yet.</p>}
                   {available.length > 0 && (
                     <div className="connection-add">
-                      <select value={connectingTo} onChange={e => setConnectingTo(e.target.value)} className="connection-select">
-                        <option value="">Tie a thread to...</option>
-                        {available.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
+                      <div className="connection-search-wrap">
+                        <input
+                          className="connection-search"
+                          placeholder="Search by name..."
+                          value={connectSearch}
+                          onChange={e => { setConnectSearch(e.target.value); setConnectOpen(true); setConnectingTo(''); }}
+                          onFocus={() => setConnectOpen(true)}
+                          onBlur={() => setTimeout(() => setConnectOpen(false), 150)}
+                        />
+                        {connectOpen && (
+                          <ul className="connection-dropdown">
+                            {available
+                              .filter(c => c.name.toLowerCase().includes(connectSearch.toLowerCase()))
+                              .map(c => (
+                                <li
+                                  key={c.id}
+                                  className="connection-option"
+                                  onMouseDown={() => { setConnectingTo(String(c.id)); setConnectSearch(c.name); setConnectOpen(false); }}
+                                >
+                                  <span className="connection-name">{c.name}</span>
+                                  {c.city && <span className="connection-loc">{c.city}</span>}
+                                </li>
+                              ))}
+                          </ul>
+                        )}
+                      </div>
                       <button className="btn-ghost" onClick={addConnection} disabled={!connectingTo}>Tie thread</button>
                     </div>
                   )}
