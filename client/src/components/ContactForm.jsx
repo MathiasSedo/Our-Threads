@@ -28,6 +28,8 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [locationOptions, setLocationOptions] = useState(null);
+  const [suggestedCoords, setSuggestedCoords] = useState(null);
+  const [suggestedHomeCoords, setSuggestedHomeCoords] = useState(null);
   const [connectTo, setConnectTo] = useState([]);
   const [connectSelect, setConnectSelect] = useState('');
   const [connectSearch, setConnectSearch] = useState('');
@@ -86,14 +88,12 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
     }
     setSaving(true);
     try {
-      // Manual pin placement takes priority
-      if (manualCoords) {
-        await finishSave(manualCoords);
-        return;
-      }
+      // Manual pin placement takes priority, then coords from autocomplete suggestion
+      if (manualCoords) { await finishSave(manualCoords); return; }
+      if (suggestedCoords) { await finishSave(suggestedCoords); return; }
       // If no met-in city but visit-in is filled, use visit-in coords as the main location
       if ((!form.city || !form.country) && hasVisitIn) {
-        const visitCoords = lookupCoords(form.home_city, form.home_country);
+        const visitCoords = suggestedHomeCoords || lookupCoords(form.home_city, form.home_country);
         if (visitCoords) { await finishSave(visitCoords); return; }
       }
       const locationUnchanged = initial.id
@@ -156,9 +156,8 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
       }
 
       const { lookupCoords } = await import('../hooks/useGeo.js');
-      const homeCoords = (form.home_city && form.home_country)
-        ? lookupCoords(form.home_city, form.home_country)
-        : null;
+      const homeCoords = suggestedHomeCoords
+        || ((form.home_city && form.home_country) ? lookupCoords(form.home_city, form.home_country) : null);
       api.patch(`/contacts/${result.id}/home-location`, homeCoords ?? { lat: null, lng: null }).catch(() => {});
 
       if (connectTo.length) {
@@ -216,8 +215,9 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
           <label>{manualCoords ? 'Met in — city' : 'Met in — city *'}</label>
           <AutocompleteInput
             value={form.city}
-            onChange={v => setForm(f => ({ ...f, city: v }))}
+            onChange={v => { setForm(f => ({ ...f, city: v })); setSuggestedCoords(null); }}
             onCountrySelect={c => setForm(f => ({ ...f, country: f.country || c }))}
+            onCoordsSelect={coords => setSuggestedCoords(coords)}
             getSuggestions={q => getCitySuggestions(q, form.country)}
             placeholder="City"
             onPinHint={onStartPin ? () => onStartPin(form) : null}
@@ -239,8 +239,9 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
           <label>Visit in — city</label>
           <AutocompleteInput
             value={form.home_city}
-            onChange={v => setForm(f => ({ ...f, home_city: v }))}
+            onChange={v => { setForm(f => ({ ...f, home_city: v })); setSuggestedHomeCoords(null); }}
             onCountrySelect={c => setForm(f => ({ ...f, home_country: f.home_country || c }))}
+            onCoordsSelect={coords => setSuggestedHomeCoords(coords)}
             getSuggestions={q => getCitySuggestions(q, form.home_country)}
             placeholder="Where to visit them"
           />

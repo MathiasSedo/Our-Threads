@@ -36,33 +36,46 @@ export async function getCountrySuggestions(query) {
   return [...starts, ...contains].slice(0, 8);
 }
 
+const PLACE_TYPES = new Set(['city', 'town', 'village', 'hamlet', 'municipality', 'administrative']);
+
 export async function getCitySuggestions(query, country = '') {
   if (!query || query.length < 2) return [];
+
+  // Quick local results while Nominatim loads
   await ensureLoaded();
   const q = norm(query);
   const cc = country ? NAME_TO_CODE[norm(country)] : null;
-
-  const matches = [];
+  const localOut = [];
   for (const [name, , , code] of CITIES) {
     if (cc && code !== cc) continue;
-    const nl = norm(name);
-    if (nl.startsWith(q)) matches.push([0, name, code]);
-    else if (nl.includes(q)) matches.push([1, name, code]);
-    if (matches.length >= 60) break;
+    if (norm(name).startsWith(q)) {
+      localOut.push({ name, countryName: CODE_TO_NAME[code] || code });
+      if (localOut.length >= 4) break;
+    }
   }
 
-  matches.sort((a, b) => a[0] - b[0]);
-  const seen = new Set();
-  const out = [];
-  for (const [, name, code] of matches) {
-    const key = `${name}|${code}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      out.push({ name, countryName: CODE_TO_NAME[code] || code });
-    }
-    if (out.length >= 8) break;
+  // Nominatim for full world coverage
+  try {
+    const params = new URLSearchParams({ q: query, format: 'json', limit: 8, addressdetails: 1 });
+    if (country) params.set('countrycodes', cc || country);
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+      headers: { 'User-Agent': 'OurThreads/1.0 (personal contact tracker)' },
+    });
+    const data = await res.json();
+    const seen = new Set(localOut.map(r => norm(r.name)));
+    const online = data
+      .filter(r => r.address && PLACE_TYPES.has(r.addresstype))
+      .map(r => ({
+        name: r.address.city || r.address.town || r.address.village || r.address.hamlet || r.name,
+        countryName: r.address.country,
+        lat: parseFloat(r.lat),
+        lng: parseFloat(r.lon),
+      }))
+      .filter(r => r.name && !seen.has(norm(r.name)));
+    return [...localOut, ...online].slice(0, 8);
+  } catch {
+    return localOut;
   }
-  return out;
 }
 
 // Returns { lat, lng } for a city in a country, or null if not found

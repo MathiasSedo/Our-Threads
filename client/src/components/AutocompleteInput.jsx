@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import './AutocompleteInput.css';
 
-export default function AutocompleteInput({ value, onChange, getSuggestions, placeholder, required, onPinHint, onCountrySelect }) {
+export default function AutocompleteInput({ value, onChange, getSuggestions, placeholder, required, onPinHint, onCountrySelect, onCoordsSelect }) {
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const [noResults, setNoResults] = useState(false);
@@ -28,13 +28,14 @@ export default function AutocompleteInput({ value, onChange, getSuggestions, pla
       setSuggestions(s);
       setOpen(s.length > 0);
       setNoResults(s.length === 0);
-    }, 220);
+    }, 380);
   }
 
   function pick(s) {
     const isObj = s && typeof s === 'object';
     onChange(isObj ? s.name : s);
     if (isObj && s.countryName && onCountrySelect) onCountrySelect(s.countryName);
+    if (isObj && s.lat && s.lng && onCoordsSelect) onCoordsSelect({ lat: s.lat, lng: s.lng });
     setSuggestions([]);
     setOpen(false);
   }
