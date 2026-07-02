@@ -100,6 +100,16 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
       }
       const candidates = await geocodeCandidates(form.city, form.country);
       if (candidates.length === 0) {
+        // Fall back to coords learned from a previously pinned contact with the same city name
+        const learned = allContacts.find(c =>
+          c.id !== initial.id &&
+          c.city?.toLowerCase() === form.city.toLowerCase() &&
+          c.lat && c.lng
+        );
+        if (learned) {
+          await finishSave({ lat: learned.lat, lng: learned.lng });
+          return;
+        }
         setError("Couldn't find that city — check spelling, or use ⊕ Pin location on the map.");
         setSaving(false);
         return;
