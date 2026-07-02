@@ -16,6 +16,7 @@ export default function MapPage() {
   const markersRef = useRef([]);
   const updateMarkersRef = useRef(() => {});
   const pendingPinRef = useRef(null); // { type: 'forId'|'forNew', id? }
+  const commitPinRef = useRef(null); // set when pin mode is active
   const [contacts, setContacts] = useState([]);
   const [allTags, setAllTags] = useState(['All']);
   const [activeTag, setActiveTag] = useState('All');
@@ -86,26 +87,30 @@ export default function MapPage() {
     if (leafletRef.current) activatePendingPin();
   }, [searchParams]);
 
-  function activatePendingPin() {
+  async function commitPin(rawCoords) {
     const pending = pendingPinRef.current;
-    if (!pending || !leafletRef.current) return;
+    if (!pending) return;
     pendingPinRef.current = null;
+    const coords = { lat: Math.round(rawCoords.lat * 100) / 100, lng: Math.round(rawCoords.lng * 100) / 100 };
+    if (pending.type === 'forId') {
+      await api.patch(`/contacts/${pending.id}/location`, coords).catch(() => {});
+      setContacts(prev => prev.map(c => c.id === Number(pending.id) ? { ...c, ...coords } : c));
+      sessionStorage.setItem(`pinCoords_${pending.id}`, JSON.stringify(coords));
+    } else {
+      sessionStorage.setItem('pinNewCoords', JSON.stringify(coords));
+    }
+    setPlacingPin(false);
+    setPinForContact(null);
+    leafletRef.current.getContainer().style.cursor = '';
+    navigate('/threads');
+  }
+
+  function activatePendingPin() {
+    if (!pendingPinRef.current || !leafletRef.current) return;
     setPlacingPin(true);
+    commitPinRef.current = commitPin;
     leafletRef.current.getContainer().style.cursor = 'crosshair';
-    leafletRef.current.once('click', async e => {
-      const coords = { lat: Math.round(e.latlng.lat * 100) / 100, lng: Math.round(e.latlng.lng * 100) / 100 };
-      if (pending.type === 'forId') {
-        await api.patch(`/contacts/${pending.id}/location`, coords).catch(() => {});
-        setContacts(prev => prev.map(c => c.id === Number(pending.id) ? { ...c, ...coords } : c));
-        sessionStorage.setItem(`pinCoords_${pending.id}`, JSON.stringify(coords));
-      } else {
-        sessionStorage.setItem('pinNewCoords', JSON.stringify(coords));
-      }
-      setPlacingPin(false);
-      setPinForContact(null);
-      leafletRef.current.getContainer().style.cursor = '';
-      navigate('/threads');
-    });
+    leafletRef.current.once('click', e => { commitPinRef.current = null; commitPin(e.latlng); });
   }
 
   async function initMap() {
@@ -180,17 +185,24 @@ export default function MapPage() {
         className: '', iconSize: [10, 10], iconAnchor: [5, 5],
       });
       const marker = L.marker([pinLat, pinLng], { icon: dot }).addTo(leafletRef.current);
-      if (isVis) {
-        marker.on('click', () => {
-          const nearby = contacts.filter(c => {
-            const cLat = c.home_lat || c.lat;
-            const cLng = c.home_lng || c.lng;
-            return cLat && cLng && Math.abs(cLat - pinLat) < 0.5 && Math.abs(cLng - pinLng) < 0.5;
-          });
-          setSelected(nearby.length > 1 ? nearby : [contact]);
-          leafletRef.current.setView([pinLat, pinLng], 7, { animate: true });
+      marker.on('click', e => {
+        if (commitPinRef.current) {
+          L.DomEvent.stopPropagation(e);
+          leafletRef.current.off('click');
+          const fn = commitPinRef.current;
+          commitPinRef.current = null;
+          fn({ lat: pinLat, lng: pinLng });
+          return;
+        }
+        if (!isVis) return;
+        const nearby = contacts.filter(c => {
+          const cLat = c.home_lat || c.lat;
+          const cLng = c.home_lng || c.lng;
+          return cLat && cLng && Math.abs(cLat - pinLat) < 0.5 && Math.abs(cLng - pinLng) < 0.5;
         });
-      }
+        setSelected(nearby.length > 1 ? nearby : [contact]);
+        leafletRef.current.setView([pinLat, pinLng], 7, { animate: true });
+      });
       markersRef.current.push(marker);
 
       if (showCityLabels) {
@@ -228,8 +240,8 @@ export default function MapPage() {
 
   function cancelPlacingPin() {
     setPlacingPin(false);
+    commitPinRef.current = null;
     if (leafletRef.current) leafletRef.current.getContainer().style.cursor = '';
-    // remove the pending once-click listener by firing a dummy (safest: just re-init)
     leafletRef.current?.off('click');
   }
 
