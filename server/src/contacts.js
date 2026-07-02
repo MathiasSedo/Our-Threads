@@ -54,7 +54,7 @@ export async function updateContact(req, res) {
   await db.prepare(`
     UPDATE contacts SET name=?, city=?, country=?, home_city=?, home_country=?, date_met=?, how_we_met=?, what_they_mean=?,
     contact_info=?, updated_at=datetime('now') WHERE id=?
-  `).run(name, city || null, country || null, home_city || null, home_country || null, date_met || null, how_we_met || null, what_they_mean || null, contact_info || null, req.params.id);
+  `).run(name, city || '', country || '', home_city || null, home_country || null, date_met || null, how_we_met || null, what_they_mean || null, contact_info || null, req.params.id);
 
   if (tags !== undefined) {
     await db.prepare('DELETE FROM contact_tags WHERE contact_id = ?').run(req.params.id);
