@@ -117,20 +117,18 @@ export default function ContactCard({ contact, allContacts = [], connections = [
               <div className="card-body">
                 <div className="card-main">
                   <h3 className="card-name">{contact.name}</h3>
-                  {contact.home_city && (
-                    <p className="card-met-in">
-                      {contact.city ? `met in ${contact.city}, ${contact.country}` : ''}
-                      {contact.date_met && <span className="card-date">{contact.city ? ' — ' : ''}{formatDate(contact.date_met)}</span>}
-                    </p>
-                  )}
                   <p className="card-location">
                     {contact.home_city
                       ? <>{contact.home_city}, {contact.home_country}</>
-                      : <>{contact.city}, {contact.country}
-                          {contact.date_met && <span className="card-date"> — {formatDate(contact.date_met)}</span>}
-                        </>
+                      : <>{contact.city}, {contact.country}</>
                     }
                   </p>
+                  {(contact.city || contact.date_met) && (
+                    <p className="card-met-in">
+                      {contact.home_city && contact.city ? `met in ${contact.city}, ${contact.country}` : ''}
+                      {contact.date_met && (contact.home_city && contact.city ? ` — ${formatDate(contact.date_met)}` : formatDate(contact.date_met))}
+                    </p>
+                  )}
                 </div>
 
                 {contact.how_we_met && (
