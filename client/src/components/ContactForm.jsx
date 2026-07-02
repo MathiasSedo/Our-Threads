@@ -14,6 +14,8 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
     name: '',
     city: '',
     country: '',
+    home_city: '',
+    home_country: '',
     date_met: '',
     how_we_met: '',
     contact_info: '',
@@ -113,6 +115,12 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
         : await api.post('/contacts', form);
       api.patch(`/contacts/${result.id}/location`, coords).catch(() => {});
 
+      if (form.home_city && form.home_country) {
+        const { lookupCoords } = await import('../hooks/useGeo.js');
+        const homeCoords = lookupCoords(form.home_city, form.home_country);
+        if (homeCoords) api.patch(`/contacts/${result.id}/home-location`, homeCoords).catch(() => {});
+      }
+
       if (isNew && connectTo.length) {
         const created = [];
         for (const target of connectTo) {
@@ -161,7 +169,7 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
 
       <div className="form-row">
         <div className="form-group">
-          <label>{manualCoords ? 'City' : 'City *'}</label>
+          <label>{manualCoords ? 'Met in — city' : 'Met in — city *'}</label>
           <AutocompleteInput
             value={form.city}
             onChange={v => setForm(f => ({ ...f, city: v }))}
@@ -174,6 +182,27 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
           <AutocompleteInput
             value={form.country}
             onChange={v => setForm(f => ({ ...f, country: v }))}
+            getSuggestions={getCountrySuggestions}
+            placeholder="Country"
+          />
+        </div>
+      </div>
+
+      <div className="form-row">
+        <div className="form-group">
+          <label>Visit in — city</label>
+          <AutocompleteInput
+            value={form.home_city}
+            onChange={v => setForm(f => ({ ...f, home_city: v }))}
+            getSuggestions={q => getCitySuggestions(q, form.home_country)}
+            placeholder="Where to visit them"
+          />
+        </div>
+        <div className="form-group">
+          <label>Country</label>
+          <AutocompleteInput
+            value={form.home_country}
+            onChange={v => setForm(f => ({ ...f, home_country: v }))}
             getSuggestions={getCountrySuggestions}
             placeholder="Country"
           />

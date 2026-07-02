@@ -160,6 +160,14 @@
   margin-top: 0.2rem;
 }
 
+.card-met-in {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  font-style: italic;
+  margin-top: 0.15rem;
+}
+
 .card-tags {
   display: flex;
   flex-wrap: wrap;

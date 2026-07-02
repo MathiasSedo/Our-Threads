@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { initDb } from './db.js';
 import { register, login, requireAuth } from './auth.js';
 import {
-  listContacts, getContact, createContact, updateContact, updateContactLocation, deleteContact,
+  listContacts, getContact, createContact, updateContact, updateContactLocation, updateContactHomeLocation, deleteContact,
   addEncounter, deleteEncounter, listTags, createTag,
   listConnections, createConnection, deleteConnection
 } from './contacts.js';
@@ -32,6 +32,7 @@ app.post('/api/contacts', requireAuth, ah(createContact));
 app.get('/api/contacts/:id', requireAuth, ah(getContact));
 app.put('/api/contacts/:id', requireAuth, ah(updateContact));
 app.patch('/api/contacts/:id/location', requireAuth, ah(updateContactLocation));
+app.patch('/api/contacts/:id/home-location', requireAuth, ah(updateContactHomeLocation));
 app.delete('/api/contacts/:id', requireAuth, ah(deleteContact));
 
 // Encounters

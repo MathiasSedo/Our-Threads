@@ -32,14 +32,14 @@ export async function getContact(req, res) {
 }
 
 export async function createContact(req, res) {
-  const { name, city, country, date_met, how_we_met, what_they_mean, contact_info, tags } = req.body;
-  if (!name || !city || !country) return res.status(400).json({ error: 'Name, city, and country are required' });
+  const { name, city, country, home_city, home_country, date_met, how_we_met, what_they_mean, contact_info, tags } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name is required' });
 
   const contact = await db.prepare(`
-    INSERT INTO contacts (user_id, name, city, country, lat, lng, date_met, how_we_met, what_they_mean, contact_info)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO contacts (user_id, name, city, country, lat, lng, home_city, home_country, home_lat, home_lng, date_met, how_we_met, what_they_mean, contact_info)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     RETURNING *
-  `).get(req.userId, name, city, country, null, null, date_met || null, how_we_met || null, what_they_mean || null, contact_info || null);
+  `).get(req.userId, name, city || null, country || null, null, null, home_city || null, home_country || null, null, null, date_met || null, how_we_met || null, what_they_mean || null, contact_info || null);
 
   if (tags?.length) await saveTags(contact.id, req.userId, tags);
 
@@ -50,11 +50,11 @@ export async function updateContact(req, res) {
   const existing = await db.prepare('SELECT id FROM contacts WHERE id = ? AND user_id = ?').get(req.params.id, req.userId);
   if (!existing) return res.status(404).json({ error: 'Not found' });
 
-  const { name, city, country, date_met, how_we_met, what_they_mean, contact_info, tags } = req.body;
+  const { name, city, country, home_city, home_country, date_met, how_we_met, what_they_mean, contact_info, tags } = req.body;
   await db.prepare(`
-    UPDATE contacts SET name=?, city=?, country=?, date_met=?, how_we_met=?, what_they_mean=?,
+    UPDATE contacts SET name=?, city=?, country=?, home_city=?, home_country=?, date_met=?, how_we_met=?, what_they_mean=?,
     contact_info=?, updated_at=datetime('now') WHERE id=?
-  `).run(name, city, country, date_met || null, how_we_met || null, what_they_mean || null, contact_info || null, req.params.id);
+  `).run(name, city || null, country || null, home_city || null, home_country || null, date_met || null, how_we_met || null, what_they_mean || null, contact_info || null, req.params.id);
 
   if (tags !== undefined) {
     await db.prepare('DELETE FROM contact_tags WHERE contact_id = ?').run(req.params.id);
@@ -73,6 +73,17 @@ export async function updateContactLocation(req, res) {
   if (typeof lat !== 'number' || typeof lng !== 'number') return res.status(400).json({ error: 'lat and lng are required' });
 
   await db.prepare('UPDATE contacts SET lat=?, lng=? WHERE id=?').run(lat, lng, req.params.id);
+  res.json({ ok: true });
+}
+
+export async function updateContactHomeLocation(req, res) {
+  const existing = await db.prepare('SELECT id FROM contacts WHERE id = ? AND user_id = ?').get(req.params.id, req.userId);
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+
+  const { lat, lng } = req.body;
+  if (typeof lat !== 'number' || typeof lng !== 'number') return res.status(400).json({ error: 'lat and lng are required' });
+
+  await db.prepare('UPDATE contacts SET home_lat=?, home_lng=? WHERE id=?').run(lat, lng, req.params.id);
   res.json({ ok: true });
 }
 

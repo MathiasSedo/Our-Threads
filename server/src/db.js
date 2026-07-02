@@ -38,6 +38,16 @@ function prepare(sql) {
 }
 
 export async function initDb() {
+  // Add new columns to existing tables (safe to run multiple times — errors ignored)
+  for (const sql of [
+    `ALTER TABLE contacts ADD COLUMN home_city TEXT`,
+    `ALTER TABLE contacts ADD COLUMN home_country TEXT`,
+    `ALTER TABLE contacts ADD COLUMN home_lat REAL`,
+    `ALTER TABLE contacts ADD COLUMN home_lng REAL`,
+  ]) {
+    await client.execute(sql).catch(() => {});
+  }
+
   await client.executeMultiple(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

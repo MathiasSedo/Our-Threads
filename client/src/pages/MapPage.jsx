@@ -87,12 +87,16 @@ export default function MapPage() {
     const focusId = searchParams.get('contact');
     if (focusId) {
       const focusContact = contacts.find(c => c.id === Number(focusId));
-      if (focusContact?.lat && focusContact?.lng) {
-        const nearby = contacts.filter(c =>
-          c.lat && c.lng && Math.abs(c.lat - focusContact.lat) < 0.5 && Math.abs(c.lng - focusContact.lng) < 0.5
-        );
+      const fLat = focusContact?.home_lat || focusContact?.lat;
+      const fLng = focusContact?.home_lng || focusContact?.lng;
+      if (fLat && fLng) {
+        const nearby = contacts.filter(c => {
+          const cLat = c.home_lat || c.lat;
+          const cLng = c.home_lng || c.lng;
+          return cLat && cLng && Math.abs(cLat - fLat) < 0.5 && Math.abs(cLng - fLng) < 0.5;
+        });
         setSelected(nearby.length > 1 ? nearby : [focusContact]);
-        map.setView([focusContact.lat, focusContact.lng], 7);
+        map.setView([fLat, fLng], 7);
       }
       setSearchParams({}, { replace: true });
     }
@@ -124,7 +128,10 @@ export default function MapPage() {
     const showCityLabels = zoom >= 6;
 
     contacts.forEach(contact => {
-      if (!contact.lat || !contact.lng) return;
+      // Prefer "visit in" coords over "met in" coords for pin placement
+      const pinLat = contact.home_lat || contact.lat;
+      const pinLng = contact.home_lng || contact.lng;
+      if (!pinLat || !pinLng) return;
       const isVis = visibleIds.has(contact.id);
       const blend = blendTagColor(contact.tags);
       const style = blend ? ` style="border-color:${blend}; box-shadow:0 0 0 2px ${blend}26"` : '';
@@ -132,24 +139,27 @@ export default function MapPage() {
         html: `<div class="map-dot${!isVis ? ' map-dot-dim' : ''}"${style}></div>`,
         className: '', iconSize: [10, 10], iconAnchor: [5, 5],
       });
-      const marker = L.marker([contact.lat, contact.lng], { icon: dot }).addTo(leafletRef.current);
+      const marker = L.marker([pinLat, pinLng], { icon: dot }).addTo(leafletRef.current);
       if (isVis) {
         marker.on('click', () => {
-          const nearby = contacts.filter(c =>
-            c.lat && c.lng && Math.abs(c.lat - contact.lat) < 0.5 && Math.abs(c.lng - contact.lng) < 0.5
-          );
+          const nearby = contacts.filter(c => {
+            const cLat = c.home_lat || c.lat;
+            const cLng = c.home_lng || c.lng;
+            return cLat && cLng && Math.abs(cLat - pinLat) < 0.5 && Math.abs(cLng - pinLng) < 0.5;
+          });
           setSelected(nearby.length > 1 ? nearby : [contact]);
-          leafletRef.current.setView([contact.lat, contact.lng], 7, { animate: true });
+          leafletRef.current.setView([pinLat, pinLng], 7, { animate: true });
         });
       }
       markersRef.current.push(marker);
 
       if (showCityLabels) {
+        const label = contact.home_city || contact.city;
         const cityIcon = L.divIcon({
-          html: `<div class="map-label-city${!isVis ? ' map-label-dim' : ''}">${contact.city}</div>`,
+          html: `<div class="map-label-city${!isVis ? ' map-label-dim' : ''}">${label}</div>`,
           className: '', iconSize: [120, 16], iconAnchor: [-8, -2],
         });
-        markersRef.current.push(L.marker([contact.lat, contact.lng], { icon: cityIcon, interactive: false }).addTo(leafletRef.current));
+        markersRef.current.push(L.marker([pinLat, pinLng], { icon: cityIcon, interactive: false }).addTo(leafletRef.current));
       }
     });
   }
@@ -238,7 +248,7 @@ export default function MapPage() {
               return (
                 <div key={c.id} className="popup-contact">
                   <h3 className="popup-name">{c.name}</h3>
-                  <p className="popup-location">{c.city}, {c.country}</p>
+                  <p className="popup-location">{c.home_city || c.city}, {c.home_country || c.country}</p>
                   {c.tags?.length > 0 && <div className="popup-tags">{c.tags.map(t => <TagPill key={t.id} tag={t} />)}</div>}
                   {c.how_we_met && (
                     <p className="popup-story">

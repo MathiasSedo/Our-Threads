@@ -77,7 +77,9 @@ export default function ContactCard({ contact, allContacts = [], connections = [
             {contact.date_met && <span className="page-date">{formatDate(contact.date_met)}</span>}
           </div>
           <h3 className="page-name">{contact.name}</h3>
-          <p className="page-location">{contact.city?.toUpperCase()} · {contact.country?.toUpperCase()}</p>
+          <p className="page-location">
+            {(contact.home_city || contact.city)?.toUpperCase()} · {(contact.home_country || contact.country)?.toUpperCase()}
+          </p>
           <div className="page-divider" aria-hidden="true" />
           {contact.tags?.length > 0 && (
             <div className="page-tags">
@@ -116,9 +118,15 @@ export default function ContactCard({ contact, allContacts = [], connections = [
                 <div className="card-main">
                   <h3 className="card-name">{contact.name}</h3>
                   <p className="card-location">
-                    {contact.city}, {contact.country}
+                    {contact.home_city
+                      ? <>{contact.home_city}, {contact.home_country}</>
+                      : <>{contact.city}, {contact.country}</>
+                    }
                     {contact.date_met && <span className="card-date"> — {formatDate(contact.date_met)}</span>}
                   </p>
+                  {contact.home_city && contact.city && (
+                    <p className="card-met-in">met in {contact.city}, {contact.country}</p>
+                  )}
                 </div>
 
                 {contact.how_we_met && (
