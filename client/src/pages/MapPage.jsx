@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi.js';
 import TagPill from '../components/TagPill.jsx';
 import ContactForm from '../components/ContactForm.jsx';
@@ -9,11 +9,13 @@ import './MapPage.css';
 
 export default function MapPage() {
   const api = useApi();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const mapRef = useRef(null);
   const leafletRef = useRef(null);
   const markersRef = useRef([]);
   const updateMarkersRef = useRef(() => {});
+  const pendingPinRef = useRef(null); // { type: 'forId'|'forNew', id? }
   const [contacts, setContacts] = useState([]);
   const [allTags, setAllTags] = useState(['All']);
   const [activeTag, setActiveTag] = useState('All');
@@ -73,23 +75,28 @@ export default function MapPage() {
   useEffect(() => { updateMarkers(); }, [contacts, activeTag]);
   useEffect(() => { updateMarkersRef.current = updateMarkers; });
 
-  // Watch for ?pinFor= and ?pinForNew= — works even if map was already initialized
+  // Capture pin intent from URL immediately, activate once map is ready
   useEffect(() => {
-    if (!leafletRef.current) return;
-
     const pinForId = searchParams.get('pinFor');
     const pinForNew = searchParams.get('pinForNew');
     if (!pinForId && !pinForNew) return;
-
     setSearchParams({}, { replace: true });
+    pendingPinRef.current = pinForId ? { type: 'forId', id: pinForId } : { type: 'forNew' };
+    // If map already ready, activate now
+    if (leafletRef.current) activatePendingPin();
+  }, [searchParams]);
+
+  function activatePendingPin() {
+    const pending = pendingPinRef.current;
+    if (!pending || !leafletRef.current) return;
+    pendingPinRef.current = null;
     setPlacingPin(true);
     leafletRef.current.getContainer().style.cursor = 'crosshair';
-
     leafletRef.current.once('click', async e => {
       const coords = { lat: Math.round(e.latlng.lat * 100) / 100, lng: Math.round(e.latlng.lng * 100) / 100 };
-      if (pinForId) {
-        await api.patch(`/contacts/${pinForId}/location`, coords).catch(() => {});
-        setContacts(prev => prev.map(c => c.id === Number(pinForId) ? { ...c, ...coords } : c));
+      if (pending.type === 'forId') {
+        await api.patch(`/contacts/${pending.id}/location`, coords).catch(() => {});
+        setContacts(prev => prev.map(c => c.id === Number(pending.id) ? { ...c, ...coords } : c));
       } else {
         sessionStorage.setItem('pinNewCoords', JSON.stringify(coords));
       }
@@ -98,7 +105,7 @@ export default function MapPage() {
       leafletRef.current.getContainer().style.cursor = '';
       navigate('/threads');
     });
-  }, [searchParams]);
+  }
 
   async function initMap() {
     const L = (await import('leaflet')).default;
@@ -141,6 +148,9 @@ export default function MapPage() {
         youMarker.on('click', () => map.setView([latitude, longitude], 9, { animate: true }));
       }, () => {});
     }
+
+    // Activate any pin that was requested before the map was ready
+    if (pendingPinRef.current) activatePendingPin();
   }
 
   async function updateMarkers() {
