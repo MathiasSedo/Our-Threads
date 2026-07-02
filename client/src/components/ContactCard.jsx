@@ -137,6 +137,8 @@ export default function ContactCard({ contact, allContacts = [], connections = [
                 onSave={(u) => { setRestoredForm(null); setPinnedCoords(null); onUpdate(u); setEditing(false); }}
                 onCancel={() => { setRestoredForm(null); setPinnedCoords(null); setEditing(false); }}
                 manualCoords={pinnedCoords}
+                allContacts={allContacts}
+                onConnectionsCreated={(rows) => onConnectionChange([...connections, ...rows])}
               />
             ) : (
               <div className="card-body">

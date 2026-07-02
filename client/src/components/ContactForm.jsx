@@ -141,7 +141,7 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
         : null;
       api.patch(`/contacts/${result.id}/home-location`, homeCoords ?? { lat: null, lng: null }).catch(() => {});
 
-      if (isNew && connectTo.length) {
+      if (connectTo.length) {
         const created = [];
         for (const target of connectTo) {
           try {
@@ -271,7 +271,7 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
         </div>
       </div>
 
-      {isNew && allContacts.length > 0 && (
+      {allContacts.length > 0 && (
         <div className="form-group">
           <label>Threads woven to this one</label>
           {connectTo.length > 0 && (
