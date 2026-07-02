@@ -68,8 +68,12 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    if (!form.name || !form.city || !form.country) {
-      setError('Name, city, and country are required.');
+    if (!form.name) {
+      setError('Name is required.');
+      return;
+    }
+    if (!manualCoords && (!form.city || !form.country)) {
+      setError('City and country are required — or tap ⊕ Pin location on the map to place it manually.');
       return;
     }
     setSaving(true);
@@ -157,23 +161,21 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
 
       <div className="form-row">
         <div className="form-group">
-          <label>City *</label>
+          <label>{manualCoords ? 'City' : 'City *'}</label>
           <AutocompleteInput
             value={form.city}
             onChange={v => setForm(f => ({ ...f, city: v }))}
             getSuggestions={q => getCitySuggestions(q, form.country)}
             placeholder="City"
-            required
           />
         </div>
         <div className="form-group">
-          <label>Country *</label>
+          <label>{manualCoords ? 'Country' : 'Country *'}</label>
           <AutocompleteInput
             value={form.country}
             onChange={v => setForm(f => ({ ...f, country: v }))}
             getSuggestions={getCountrySuggestions}
             placeholder="Country"
-            required
           />
         </div>
       </div>
