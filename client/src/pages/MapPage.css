@@ -16,6 +16,14 @@
   z-index: 50;
 }
 
+@media (max-width: 600px) {
+  .map-actions {
+    position: static;
+    justify-content: flex-end;
+    margin-top: -0.25rem;
+  }
+}
+
 .map-add-btn, .map-pin-btn {
   font-family: var(--font-display);
   font-size: 0.72rem;
@@ -129,7 +137,7 @@
   position: relative;
   border: 1px solid var(--border);
   background: #ede8df;
-  min-height: 400px;
+  min-height: 300px;
   overflow: hidden;
 }
 
@@ -301,4 +309,29 @@
 
 .popup-open-page:hover {
   background: var(--ink);
+}
+
+@media (max-width: 600px) {
+  .map-page { gap: 0.5rem; }
+
+  .map-title-block { flex-direction: column; gap: 0.15rem; align-items: flex-start; }
+  .map-title { font-size: 0.85rem; white-space: nowrap; }
+  .map-stats { font-size: 0.6rem; }
+
+  .map-add-btn, .map-pin-btn {
+    font-size: 0.65rem;
+    padding: 0.4rem 0.75rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* Shorten pin button label on small screens via content trick */
+  .map-pin-btn .pin-label-full { display: none; }
+  .map-pin-btn .pin-label-short { display: inline; }
+
+  .map-tag-filter { gap: 0.3rem; }
+
+  .map-add-overlay { padding-top: 0; align-items: flex-end; }
+  .map-add-panel { margin: 0; border-radius: 12px 12px 0 0; max-height: 90dvh; overflow-y: auto; }
+
+  .map-popup { left: 0.75rem; right: 0.75rem; bottom: 0.75rem; }
 }

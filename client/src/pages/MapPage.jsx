@@ -202,7 +202,7 @@ export default function MapPage() {
           className={`map-pin-btn${placingPin ? ' active' : ''}`}
           onClick={placingPin ? cancelPlacingPin : startPlacingPin}
         >
-          {placingPin ? 'Tap the map…' : '⊕ Pin location'}
+          {placingPin ? 'Tap the map…' : '⊕ Pin'}
         </button>
       </div>
 
