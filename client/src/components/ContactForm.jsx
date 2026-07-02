@@ -100,7 +100,12 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
       }
       const candidates = await geocodeCandidates(form.city, form.country);
       if (candidates.length === 0) {
-        // Fall back to coords learned from a previously pinned contact with the same city name
+        // Reuse existing coords if this contact was already pinned
+        if (initial.lat && initial.lng) {
+          await finishSave({ lat: initial.lat, lng: initial.lng });
+          return;
+        }
+        // Fall back to coords learned from another contact with the same city name
         const learned = allContacts.find(c =>
           c.id !== initial.id &&
           c.city?.toLowerCase() === form.city.toLowerCase() &&
