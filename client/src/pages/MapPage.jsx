@@ -117,6 +117,7 @@ export default function MapPage() {
         setPlacingPin(false);
         setPinForContact(null);
         map.getContainer().style.cursor = '';
+        navigate('/threads');
       });
     }
 
