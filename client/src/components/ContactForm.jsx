@@ -213,6 +213,7 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
           <AutocompleteInput
             value={form.city}
             onChange={v => setForm(f => ({ ...f, city: v }))}
+            onCountrySelect={c => setForm(f => ({ ...f, country: f.country || c }))}
             getSuggestions={q => getCitySuggestions(q, form.country)}
             placeholder="City"
             onPinHint={onStartPin ? () => onStartPin(form) : null}
@@ -235,6 +236,7 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
           <AutocompleteInput
             value={form.home_city}
             onChange={v => setForm(f => ({ ...f, home_city: v }))}
+            onCountrySelect={c => setForm(f => ({ ...f, home_country: f.home_country || c }))}
             getSuggestions={q => getCitySuggestions(q, form.home_country)}
             placeholder="Where to visit them"
           />

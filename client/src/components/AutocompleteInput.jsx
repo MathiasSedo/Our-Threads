@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import './AutocompleteInput.css';
 
-export default function AutocompleteInput({ value, onChange, getSuggestions, placeholder, required, onPinHint }) {
+export default function AutocompleteInput({ value, onChange, getSuggestions, placeholder, required, onPinHint, onCountrySelect }) {
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const [noResults, setNoResults] = useState(false);
@@ -31,8 +31,10 @@ export default function AutocompleteInput({ value, onChange, getSuggestions, pla
     }, 220);
   }
 
-  function pick(val) {
-    onChange(val);
+  function pick(s) {
+    const isObj = s && typeof s === 'object';
+    onChange(isObj ? s.name : s);
+    if (isObj && s.countryName && onCountrySelect) onCountrySelect(s.countryName);
     setSuggestions([]);
     setOpen(false);
   }
@@ -58,15 +60,21 @@ export default function AutocompleteInput({ value, onChange, getSuggestions, pla
       />
       {open && (
         <ul className="autocomplete-list">
-          {suggestions.map((s, i) => (
-            <li
-              key={s}
-              className={`autocomplete-item ${i === active ? 'active' : ''}`}
-              onMouseDown={() => pick(s)}
-            >
-              {s}
-            </li>
-          ))}
+          {suggestions.map((s, i) => {
+            const isObj = s && typeof s === 'object';
+            const label = isObj ? s.name : s;
+            const sub = isObj && s.countryName ? s.countryName : null;
+            const key = isObj ? `${s.name}|${s.countryName}` : s;
+            return (
+              <li
+                key={key}
+                className={`autocomplete-item ${i === active ? 'active' : ''}`}
+                onMouseDown={() => pick(s)}
+              >
+                {label}{sub && <span className="autocomplete-country">, {sub}</span>}
+              </li>
+            );
+          })}
         </ul>
       )}
       {noResults && value.trim().length >= 2 && onPinHint && (

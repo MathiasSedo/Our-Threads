@@ -34,6 +34,11 @@
   color: var(--ink);
 }
 
+.autocomplete-country {
+  opacity: 0.55;
+  font-size: 0.85em;
+}
+
 .autocomplete-pin-hint {
   font-family: var(--font-body);
   font-size: 0.75rem;

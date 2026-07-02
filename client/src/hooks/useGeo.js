@@ -46,16 +46,20 @@ export async function getCitySuggestions(query, country = '') {
   for (const [name, , , code] of CITIES) {
     if (cc && code !== cc) continue;
     const nl = norm(name);
-    if (nl.startsWith(q)) matches.push([0, name]);
-    else if (nl.includes(q)) matches.push([1, name]);
+    if (nl.startsWith(q)) matches.push([0, name, code]);
+    else if (nl.includes(q)) matches.push([1, name, code]);
     if (matches.length >= 60) break;
   }
 
   matches.sort((a, b) => a[0] - b[0]);
   const seen = new Set();
   const out = [];
-  for (const [, name] of matches) {
-    if (!seen.has(name)) { seen.add(name); out.push(name); }
+  for (const [, name, code] of matches) {
+    const key = `${name}|${code}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push({ name, countryName: CODE_TO_NAME[code] || code });
+    }
     if (out.length >= 8) break;
   }
   return out;
