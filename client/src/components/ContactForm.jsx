@@ -115,11 +115,11 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
         : await api.post('/contacts', form);
       api.patch(`/contacts/${result.id}/location`, coords).catch(() => {});
 
-      if (form.home_city && form.home_country) {
-        const { lookupCoords } = await import('../hooks/useGeo.js');
-        const homeCoords = lookupCoords(form.home_city, form.home_country);
-        if (homeCoords) api.patch(`/contacts/${result.id}/home-location`, homeCoords).catch(() => {});
-      }
+      const { lookupCoords } = await import('../hooks/useGeo.js');
+      const homeCoords = (form.home_city && form.home_country)
+        ? lookupCoords(form.home_city, form.home_country)
+        : null;
+      api.patch(`/contacts/${result.id}/home-location`, homeCoords ?? { lat: null, lng: null }).catch(() => {});
 
       if (isNew && connectTo.length) {
         const created = [];

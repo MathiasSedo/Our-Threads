@@ -81,9 +81,7 @@ export async function updateContactHomeLocation(req, res) {
   if (!existing) return res.status(404).json({ error: 'Not found' });
 
   const { lat, lng } = req.body;
-  if (typeof lat !== 'number' || typeof lng !== 'number') return res.status(400).json({ error: 'lat and lng are required' });
-
-  await db.prepare('UPDATE contacts SET home_lat=?, home_lng=? WHERE id=?').run(lat, lng, req.params.id);
+  await db.prepare('UPDATE contacts SET home_lat=?, home_lng=? WHERE id=?').run(lat ?? null, lng ?? null, req.params.id);
   res.json({ ok: true });
 }
 
