@@ -39,7 +39,7 @@ export async function createContact(req, res) {
     INSERT INTO contacts (user_id, name, city, country, lat, lng, home_city, home_country, home_lat, home_lng, date_met, how_we_met, what_they_mean, contact_info)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     RETURNING *
-  `).get(req.userId, name, city || null, country || null, null, null, home_city || null, home_country || null, null, null, date_met || null, how_we_met || null, what_they_mean || null, contact_info || null);
+  `).get(req.userId, name, city || '', country || '', null, null, home_city || null, home_country || null, null, null, date_met || null, how_we_met || null, what_they_mean || null, contact_info || null);
 
   if (tags?.length) await saveTags(contact.id, req.userId, tags);
 
