@@ -70,9 +70,9 @@ export default function ThreadsPage() {
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(c =>
-        c.name.toLowerCase().includes(q) ||
-        c.city.toLowerCase().includes(q) ||
-        c.country.toLowerCase().includes(q) ||
+        c.name?.toLowerCase().includes(q) ||
+        c.city?.toLowerCase().includes(q) ||
+        c.country?.toLowerCase().includes(q) ||
         c.how_we_met?.toLowerCase().includes(q) ||
         c.what_they_mean?.toLowerCase().includes(q)
       );
