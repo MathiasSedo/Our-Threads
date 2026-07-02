@@ -130,10 +130,7 @@ export default function MapPage() {
     if (leafletRef.current) return;
     const map = L.map(mapRef.current, { center: [30, 15], zoom: 2, zoomControl: false, worldCopyJump: true });
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-      attribution: '© CARTO', subdomains: 'abcd', opacity: 0.55, className: 'map-base-tile',
-    }).addTo(map);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd', opacity: 0.35, className: 'map-border-tile', pane: 'shadowPane',
+      attribution: '© CARTO', subdomains: 'abcd', opacity: 0.75, className: 'map-base-tile',
     }).addTo(map);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     leafletRef.current = map;
