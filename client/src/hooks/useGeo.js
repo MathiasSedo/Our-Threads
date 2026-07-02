@@ -1,3 +1,5 @@
+const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
 let COUNTRY_NAMES = {};
 let CITIES = [];
 let CODE_TO_NAME = {};
@@ -37,13 +39,13 @@ export async function getCountrySuggestions(query) {
 export async function getCitySuggestions(query, country = '') {
   if (!query || query.length < 2) return [];
   await ensureLoaded();
-  const q = query.toLowerCase();
-  const cc = country ? NAME_TO_CODE[country.toLowerCase()] : null;
+  const q = norm(query);
+  const cc = country ? NAME_TO_CODE[norm(country)] : null;
 
   const matches = [];
   for (const [name, , , code] of CITIES) {
     if (cc && code !== cc) continue;
-    const nl = name.toLowerCase();
+    const nl = norm(name);
     if (nl.startsWith(q)) matches.push([0, name]);
     else if (nl.includes(q)) matches.push([1, name]);
     if (matches.length >= 60) break;
@@ -62,13 +64,13 @@ export async function getCitySuggestions(query, country = '') {
 // Returns { lat, lng } for a city in a country, or null if not found
 export function lookupCoords(city, country) {
   if (!loaded || !city) return null;
-  const q = city.toLowerCase();
-  const cc = NAME_TO_CODE[country?.toLowerCase()] || null;
+  const q = norm(city);
+  const cc = NAME_TO_CODE[norm(country)] || null;
   for (const [name, lat, lng, code] of CITIES) {
-    if (name.toLowerCase() === q && (!cc || code === cc)) return { lat, lng };
+    if (norm(name) === q && (!cc || code === cc)) return { lat, lng };
   }
   for (const [name, lat, lng, code] of CITIES) {
-    if (name.toLowerCase().startsWith(q) && (!cc || code === cc)) return { lat, lng };
+    if (norm(name).startsWith(q) && (!cc || code === cc)) return { lat, lng };
   }
   return null;
 }
