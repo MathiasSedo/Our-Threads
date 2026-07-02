@@ -12,10 +12,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ZIP_URL = 'https://download.geonames.org/export/dump/cities5000.zip';
-const ZIP_PATH = path.join(__dirname, '../tmp/cities5000.zip');
-const TXT_PATH = path.join(__dirname, '../tmp/cities5000.txt');
-const OUT_PATH = path.join(__dirname, '../client/src/data/cities.json');
+const ZIP_URL = 'https://download.geonames.org/export/dump/cities15000.zip';
+const ZIP_PATH = path.join(__dirname, '../tmp/cities15000.zip');
+const TXT_PATH = path.join(__dirname, '../tmp/cities15000.txt');
+const OUT_PATH = path.join(__dirname, '../client/public/cities.json');
 
 // Country code → display name (ISO 3166-1 alpha-2)
 const COUNTRY_NAMES = {
@@ -97,7 +97,7 @@ async function parseCities(txtPath) {
   return cities;
 }
 
-console.log('Downloading cities5000.zip from geonames.org...');
+console.log('Downloading cities15000.zip from geonames.org...');
 await download(ZIP_URL, ZIP_PATH);
 console.log('Download done. Extracting...');
 

@@ -33,3 +33,23 @@
   background: var(--parchment-dark);
   color: var(--ink);
 }
+
+.autocomplete-pin-hint {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  font-style: italic;
+  margin-top: 0.3rem;
+}
+
+.autocomplete-pin-btn {
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}

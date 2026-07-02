@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import './AutocompleteInput.css';
 
-export default function AutocompleteInput({ value, onChange, getSuggestions, placeholder, required }) {
+export default function AutocompleteInput({ value, onChange, getSuggestions, placeholder, required, onPinHint }) {
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
+  const [noResults, setNoResults] = useState(false);
   const [active, setActive] = useState(-1);
   const debounce = useRef(null);
   const wrapRef = useRef(null);
@@ -26,6 +27,7 @@ export default function AutocompleteInput({ value, onChange, getSuggestions, pla
       const s = await getSuggestions(v);
       setSuggestions(s);
       setOpen(s.length > 0);
+      setNoResults(s.length === 0);
     }, 220);
   }
 
@@ -66,6 +68,11 @@ export default function AutocompleteInput({ value, onChange, getSuggestions, pla
             </li>
           ))}
         </ul>
+      )}
+      {noResults && value.trim().length >= 2 && onPinHint && (
+        <p className="autocomplete-pin-hint">
+          Can't find it? <button type="button" className="autocomplete-pin-btn" onMouseDown={onPinHint}>⊕ Pin on map</button>
+        </p>
       )}
     </div>
   );

@@ -13,7 +13,7 @@ export default defineConfig({
         // cities.json is large — runtime cache it with a long TTL
         runtimeCaching: [
           {
-            urlPattern: /\/src\/data\/cities\.json/,
+            urlPattern: /\/cities\.json/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'cities-data',

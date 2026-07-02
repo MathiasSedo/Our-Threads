@@ -228,6 +228,7 @@ export default function MapPage() {
             <ContactForm
               onSave={handleSave}
               onCancel={() => { setAdding(false); setManualCoords(null); }}
+              onStartPin={() => { setAdding(false); startPlacingPin(); }}
               allContacts={contacts}
               manualCoords={manualCoords}
             />

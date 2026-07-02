@@ -1,25 +1,42 @@
-import citiesData from '../data/cities.json';
+let COUNTRY_NAMES = {};
+let CITIES = [];
+let CODE_TO_NAME = {};
+let NAME_TO_CODE = {};
+let loaded = false;
+let loadPromise = null;
 
-const { countries: COUNTRY_NAMES, cities: CITIES } = citiesData;
-
-// Reverse lookup: code → name
-const CODE_TO_NAME = COUNTRY_NAMES;
-// Forward lookup: lowercase name → code
-const NAME_TO_CODE = {};
-for (const [code, name] of Object.entries(COUNTRY_NAMES)) {
-  NAME_TO_CODE[name.toLowerCase()] = code;
+async function ensureLoaded() {
+  if (loaded) return;
+  if (loadPromise) return loadPromise;
+  loadPromise = fetch('/cities.json')
+    .then(r => r.json())
+    .then(data => {
+      COUNTRY_NAMES = data.countries;
+      CITIES = data.cities;
+      CODE_TO_NAME = COUNTRY_NAMES;
+      for (const [code, name] of Object.entries(COUNTRY_NAMES)) {
+        NAME_TO_CODE[name.toLowerCase()] = code;
+      }
+      loaded = true;
+    });
+  return loadPromise;
 }
 
-export function getCountrySuggestions(query) {
+// Kick off the load immediately so it's ready by the time the user types
+ensureLoaded();
+
+export async function getCountrySuggestions(query) {
+  await ensureLoaded();
   const q = query.toLowerCase();
   const names = Object.values(COUNTRY_NAMES);
   const starts = names.filter(n => n.toLowerCase().startsWith(q));
   const contains = names.filter(n => !n.toLowerCase().startsWith(q) && n.toLowerCase().includes(q));
-  return Promise.resolve([...starts, ...contains].slice(0, 8));
+  return [...starts, ...contains].slice(0, 8);
 }
 
-export function getCitySuggestions(query, country = '') {
-  if (!query || query.length < 2) return Promise.resolve([]);
+export async function getCitySuggestions(query, country = '') {
+  if (!query || query.length < 2) return [];
+  await ensureLoaded();
   const q = query.toLowerCase();
   const cc = country ? NAME_TO_CODE[country.toLowerCase()] : null;
 
@@ -39,17 +56,17 @@ export function getCitySuggestions(query, country = '') {
     if (!seen.has(name)) { seen.add(name); out.push(name); }
     if (out.length >= 8) break;
   }
-  return Promise.resolve(out);
+  return out;
 }
 
 // Returns { lat, lng } for a city in a country, or null if not found
 export function lookupCoords(city, country) {
+  if (!loaded || !city) return null;
   const q = city.toLowerCase();
   const cc = NAME_TO_CODE[country?.toLowerCase()] || null;
   for (const [name, lat, lng, code] of CITIES) {
     if (name.toLowerCase() === q && (!cc || code === cc)) return { lat, lng };
   }
-  // Fuzzy fallback: startsWith
   for (const [name, lat, lng, code] of CITIES) {
     if (name.toLowerCase().startsWith(q) && (!cc || code === cc)) return { lat, lng };
   }

@@ -8,7 +8,7 @@ import './ContactForm.css';
 
 const CORE_TAGS = ['Visit', 'Work', 'Family', 'Invite for wedding'];
 
-export default function ContactForm({ initial = {}, onSave, onCancel, allContacts = [], onConnectionsCreated, manualCoords = null }) {
+export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin, allContacts = [], onConnectionsCreated, manualCoords = null }) {
   const api = useApi();
   const [form, setForm] = useState({
     name: '',
@@ -175,6 +175,7 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
             onChange={v => setForm(f => ({ ...f, city: v }))}
             getSuggestions={q => getCitySuggestions(q, form.country)}
             placeholder="City"
+            onPinHint={onStartPin}
           />
         </div>
         <div className="form-group">
