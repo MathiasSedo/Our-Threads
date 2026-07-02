@@ -419,8 +419,8 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
     groupLayout(n => n.tags?.[0]?.name || 'Untagged');
   }
 
-  function handleGroupByCountry() {
-    groupLayout(n => n.home_country || n.country || 'Unknown');
+  function handleGroupByCountry(mode) {
+    groupLayout(n => (mode === 'met' ? n.country : (n.home_country || n.country)) || 'Unknown');
   }
 
   function handleGroupByDate() {
@@ -448,7 +448,11 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
           <div className="web-tool-group">
             <button className="web-tool-btn" onClick={handleCluster}>Cluster</button>
             <button className="web-tool-btn" onClick={handleGroupByTag}>By tag</button>
-            <button className="web-tool-btn" onClick={handleGroupByCountry}>By country</button>
+            <span className="web-tool-split">
+              <button className="web-tool-btn" onClick={() => handleGroupByCountry('visit')}>By country</button>
+              <button className="web-tool-btn web-tool-sub" title="Where you met" onClick={() => handleGroupByCountry('met')}>met in</button>
+              <button className="web-tool-btn web-tool-sub" title="Where they live now" onClick={() => handleGroupByCountry('visit')}>live in</button>
+            </span>
             <button className="web-tool-btn" onClick={handleGroupByDate}>By date</button>
           </div>
           <div className="web-zoom-group">
