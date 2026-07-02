@@ -24,6 +24,7 @@ export default function MapPage() {
   const [adding, setAdding] = useState(false);
   const [placingPin, setPlacingPin] = useState(false);
   const [manualCoords, setManualCoords] = useState(null);
+  const [pinForContact, setPinForContact] = useState(null);
 
   const CORE_ORDER = ['Visit', 'Work', 'Family', 'Invite for wedding'];
 
@@ -99,6 +100,23 @@ export default function MapPage() {
         map.setView([fLat, fLng], 7);
       }
       setSearchParams({}, { replace: true });
+    }
+
+    // Pin-for-edit: navigate here with ?pinFor=id to re-pin an existing contact
+    const pinForId = searchParams.get('pinFor');
+    if (pinForId) {
+      setPinForContact(Number(pinForId));
+      setSearchParams({}, { replace: true });
+      setPlacingPin(true);
+      map.getContainer().style.cursor = 'crosshair';
+      map.once('click', async e => {
+        const coords = { lat: Math.round(e.latlng.lat * 100) / 100, lng: Math.round(e.latlng.lng * 100) / 100 };
+        await api.patch(`/contacts/${pinForId}/location`, coords).catch(() => {});
+        setContacts(prev => prev.map(c => c.id === Number(pinForId) ? { ...c, ...coords } : c));
+        setPlacingPin(false);
+        setPinForContact(null);
+        map.getContainer().style.cursor = '';
+      });
     }
 
     if (navigator.geolocation) {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi.js';
 import TagPill from './TagPill.jsx';
 import AutocompleteInput from './AutocompleteInput.jsx';
@@ -10,6 +11,7 @@ const CORE_TAGS = ['Visit', 'Work', 'Family', 'Invite for wedding'];
 
 export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin, allContacts = [], onConnectionsCreated, manualCoords = null }) {
   const api = useApi();
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '',
     city: '',
@@ -303,6 +305,16 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
         {onCancel && (
           <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
         )}
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={() => {
+            if (onStartPin) { onStartPin(); }
+            else if (initial.id) { onCancel?.(); navigate(`/map?pinFor=${initial.id}`); }
+          }}
+        >
+          ⊕ Pin on map
+        </button>
         <button type="submit" className="btn-primary" disabled={saving}>
           {saving ? 'Saving...' : 'Save to the map'}
         </button>
