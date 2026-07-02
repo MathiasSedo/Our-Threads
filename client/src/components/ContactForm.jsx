@@ -161,10 +161,6 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
           <label>Name *</label>
           <input value={form.name} onChange={set('name')} placeholder="Full name" required />
         </div>
-        <div className="form-group">
-          <label>Date met</label>
-          <input type="month" value={form.date_met} onChange={set('date_met')} />
-        </div>
       </div>
 
       <div className="form-row">
@@ -185,6 +181,10 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
             getSuggestions={getCountrySuggestions}
             placeholder="Country"
           />
+        </div>
+        <div className="form-group">
+          <label>When</label>
+          <input type="month" value={form.date_met} onChange={set('date_met')} />
         </div>
       </div>
 
