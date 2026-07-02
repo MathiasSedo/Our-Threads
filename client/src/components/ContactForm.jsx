@@ -183,7 +183,7 @@ export default function ContactForm({ initial = {}, onSave, onCancel, allContact
           />
         </div>
         <div className="form-group">
-          <label>When</label>
+          <label>Date met</label>
           <input type="month" value={form.date_met} onChange={set('date_met')} />
         </div>
       </div>
