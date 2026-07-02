@@ -105,11 +105,17 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
           await finishSave({ lat: initial.lat, lng: initial.lng });
           return;
         }
+        const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+        const cityNorm = norm(form.city);
+        // Check localStorage cache of manually pinned city coords
+        try {
+          const cache = JSON.parse(localStorage.getItem('pinnedCities') || '{}');
+          const cached = Object.entries(cache).find(([k]) => norm(k) === cityNorm);
+          if (cached) { await finishSave(cached[1]); return; }
+        } catch {}
         // Fall back to coords learned from another contact with the same city name
         const learned = allContacts.find(c =>
-          c.id !== initial.id &&
-          c.city?.toLowerCase() === form.city.toLowerCase() &&
-          c.lat && c.lng
+          c.id !== initial.id && norm(c.city) === cityNorm && c.lat && c.lng
         );
         if (learned) {
           await finishSave({ lat: learned.lat, lng: learned.lng });
@@ -134,6 +140,14 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
         ? await api.put(`/contacts/${initial.id}`, form)
         : await api.post('/contacts', form);
       api.patch(`/contacts/${result.id}/location`, coords).catch(() => {});
+      // Cache city → coords so future contacts can find non-dataset cities
+      if (form.city) {
+        try {
+          const cache = JSON.parse(localStorage.getItem('pinnedCities') || '{}');
+          cache[form.city] = { lat: coords.lat, lng: coords.lng };
+          localStorage.setItem('pinnedCities', JSON.stringify(cache));
+        } catch {}
+      }
 
       const { lookupCoords } = await import('../hooks/useGeo.js');
       const homeCoords = (form.home_city && form.home_country)
