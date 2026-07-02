@@ -38,13 +38,24 @@ export default function MapPage() {
         const list = cs || [];
         // Fill missing coords from bundled city data — instant, no API call
         const filled = list.map(c => {
-          if (c.lat && c.lng) return c;
-          const coords = lookupCoords(c.city, c.country);
-          if (coords) {
-            api.patch(`/contacts/${c.id}/location`, coords).catch(() => {});
-            return { ...c, ...coords };
+          let updated = c;
+          // Back-fill main coords
+          if (!c.lat || !c.lng) {
+            const coords = lookupCoords(c.city, c.country);
+            if (coords) {
+              api.patch(`/contacts/${c.id}/location`, coords).catch(() => {});
+              updated = { ...updated, ...coords };
+            }
           }
-          return c;
+          // Back-fill home coords (may have been null if diacritics failed before fix)
+          if (c.home_city && c.home_country && (!c.home_lat || !c.home_lng)) {
+            const homeCoords = lookupCoords(c.home_city, c.home_country);
+            if (homeCoords) {
+              api.patch(`/contacts/${c.id}/home-location`, homeCoords).catch(() => {});
+              updated = { ...updated, home_lat: homeCoords.lat, home_lng: homeCoords.lng };
+            }
+          }
+          return updated;
         });
         setContacts(filled);
         const names = (ts || []).map(t => t.name);
