@@ -25,6 +25,7 @@ export default function MapPage() {
   const [placingPin, setPlacingPin] = useState(false);
   const [manualCoords, setManualCoords] = useState(null);
   const [pinForContact, setPinForContact] = useState(null);
+  const [savedForm, setSavedForm] = useState(null);
 
   const CORE_ORDER = ['Visit', 'Work', 'Family', 'Invite for wedding'];
 
@@ -188,13 +189,16 @@ export default function MapPage() {
     setManualCoords(null);
   }
 
-  async function startPlacingPin() {
+  async function startPlacingPin(formSnapshot = null) {
     const L = (await import('leaflet')).default;
     if (!leafletRef.current) return;
+    if (formSnapshot) setSavedForm(formSnapshot);
+    setAdding(false);
     setPlacingPin(true);
     leafletRef.current.getContainer().style.cursor = 'crosshair';
     leafletRef.current.once('click', e => {
-      setManualCoords({ lat: Math.round(e.latlng.lat * 100) / 100, lng: Math.round(e.latlng.lng * 100) / 100 });
+      const coords = { lat: Math.round(e.latlng.lat * 100) / 100, lng: Math.round(e.latlng.lng * 100) / 100 };
+      setManualCoords(coords);
       setPlacingPin(false);
       setAdding(true);
       leafletRef.current.getContainer().style.cursor = '';
@@ -244,9 +248,11 @@ export default function MapPage() {
               </p>
             )}
             <ContactForm
-              onSave={handleSave}
-              onCancel={() => { setAdding(false); setManualCoords(null); }}
-              onStartPin={() => { setAdding(false); startPlacingPin(); }}
+              key={manualCoords ? 'pinned' : 'normal'}
+              initial={savedForm || {}}
+              onSave={(c) => { setSavedForm(null); handleSave(c); }}
+              onCancel={() => { setAdding(false); setManualCoords(null); setSavedForm(null); }}
+              onStartPin={(formSnapshot) => startPlacingPin(formSnapshot)}
               allContacts={contacts}
               manualCoords={manualCoords}
             />

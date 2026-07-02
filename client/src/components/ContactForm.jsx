@@ -177,7 +177,7 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
             onChange={v => setForm(f => ({ ...f, city: v }))}
             getSuggestions={q => getCitySuggestions(q, form.country)}
             placeholder="City"
-            onPinHint={onStartPin}
+            onPinHint={onStartPin ? () => onStartPin(form) : null}
           />
         </div>
         <div className="form-group">
@@ -309,8 +309,13 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
           type="button"
           className="btn-ghost"
           onClick={() => {
-            if (onStartPin) { onStartPin(); }
-            else if (initial.id) { onCancel?.(); navigate(`/map?pinFor=${initial.id}`); }
+            if (onStartPin) {
+              onStartPin(form);
+            } else if (initial.id) {
+              sessionStorage.setItem(`pinForm_${initial.id}`, JSON.stringify(form));
+              onCancel?.();
+              navigate(`/map?pinFor=${initial.id}`);
+            }
           }}
         >
           ⊕ Pin on map

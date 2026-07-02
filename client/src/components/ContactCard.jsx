@@ -20,6 +20,20 @@ export default function ContactCard({ contact, allContacts = [], connections = [
   useEffect(() => {
     if (autoOpen) setOpen(true);
   }, [autoOpen]);
+
+  // Restore edit form if returning from map pin flow
+  const [restoredForm, setRestoredForm] = useState(null);
+  useEffect(() => {
+    const key = `pinForm_${contact.id}`;
+    const saved = sessionStorage.getItem(key);
+    if (saved) {
+      sessionStorage.removeItem(key);
+      setRestoredForm(JSON.parse(saved));
+      setOpen(true);
+      setEditing(true);
+    }
+  }, [contact.id]);
+
   const [editing, setEditing] = useState(false);
   const [encounters] = useState(contact.encounters || []);
   const [deleting, setDeleting] = useState(false);
@@ -109,9 +123,9 @@ export default function ContactCard({ contact, allContacts = [], connections = [
 
             {editing ? (
               <ContactForm
-                initial={contact}
-                onSave={(u) => { onUpdate(u); setEditing(false); }}
-                onCancel={() => setEditing(false)}
+                initial={restoredForm ? { ...contact, ...restoredForm } : contact}
+                onSave={(u) => { setRestoredForm(null); onUpdate(u); setEditing(false); }}
+                onCancel={() => { setRestoredForm(null); setEditing(false); }}
               />
             ) : (
               <div className="card-body">
