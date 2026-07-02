@@ -73,18 +73,26 @@ export default function MapPage() {
   useEffect(() => { updateMarkers(); }, [contacts, activeTag]);
   useEffect(() => { updateMarkersRef.current = updateMarkers; });
 
-  // Watch for ?pinFor= param — works even if map was already initialized
+  // Watch for ?pinFor= and ?pinForNew= — works even if map was already initialized
   useEffect(() => {
+    if (!leafletRef.current) return;
+
     const pinForId = searchParams.get('pinFor');
-    if (!pinForId || !leafletRef.current) return;
+    const pinForNew = searchParams.get('pinForNew');
+    if (!pinForId && !pinForNew) return;
+
     setSearchParams({}, { replace: true });
-    setPinForContact(Number(pinForId));
     setPlacingPin(true);
     leafletRef.current.getContainer().style.cursor = 'crosshair';
+
     leafletRef.current.once('click', async e => {
       const coords = { lat: Math.round(e.latlng.lat * 100) / 100, lng: Math.round(e.latlng.lng * 100) / 100 };
-      await api.patch(`/contacts/${pinForId}/location`, coords).catch(() => {});
-      setContacts(prev => prev.map(c => c.id === Number(pinForId) ? { ...c, ...coords } : c));
+      if (pinForId) {
+        await api.patch(`/contacts/${pinForId}/location`, coords).catch(() => {});
+        setContacts(prev => prev.map(c => c.id === Number(pinForId) ? { ...c, ...coords } : c));
+      } else {
+        sessionStorage.setItem('pinNewCoords', JSON.stringify(coords));
+      }
       setPlacingPin(false);
       setPinForContact(null);
       leafletRef.current.getContainer().style.cursor = '';

@@ -17,6 +17,8 @@ export default function ThreadsPage() {
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState('All');
   const [adding, setAdding] = useState(false);
+  const [newFormData, setNewFormData] = useState(null);
+  const [newPinCoords, setNewPinCoords] = useState(null);
   const [allTags, setAllTags] = useState(['All']);
   const [view, setView] = useState('list'); // 'list' | 'web'
   const [openContactId, setOpenContactId] = useState(location.state?.openContactId ?? null);
@@ -28,6 +30,19 @@ export default function ThreadsPage() {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state]);
+
+  // Restore new-contact form after returning from map pin
+  useEffect(() => {
+    const saved = sessionStorage.getItem('pinNewForm');
+    const coords = sessionStorage.getItem('pinNewCoords');
+    if (saved) {
+      sessionStorage.removeItem('pinNewForm');
+      sessionStorage.removeItem('pinNewCoords');
+      setNewFormData(JSON.parse(saved));
+      if (coords) setNewPinCoords(JSON.parse(coords));
+      setAdding(true);
+    }
+  }, []);
 
   const CORE_ORDER = ['Visit', 'Work', 'Family', 'Invite for wedding'];
 
@@ -130,10 +145,17 @@ export default function ThreadsPage() {
         <div className="add-panel">
           <h2 className="add-title">Add a new thread</h2>
           <ContactForm
-            onSave={handleSave}
-            onCancel={() => setAdding(false)}
+            initial={newFormData || {}}
+            onSave={(c) => { setNewFormData(null); handleSave(c); }}
+            onCancel={() => { setNewFormData(null); setAdding(false); }}
+            onStartPin={(formSnapshot) => {
+              sessionStorage.setItem('pinNewForm', JSON.stringify(formSnapshot));
+              setAdding(false);
+              navigate('/map?pinForNew=true');
+            }}
             allContacts={contacts}
             onConnectionsCreated={(rows) => setConnections(prev => [...prev, ...rows])}
+            manualCoords={newPinCoords}
           />
         </div>
       )}
