@@ -132,6 +132,9 @@ export default function MapPage() {
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
       attribution: '© CARTO', subdomains: 'abcd', opacity: 0.55, className: 'map-base-tile',
     }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd', opacity: 0.35, className: 'map-border-tile', pane: 'shadowPane',
+    }).addTo(map);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     leafletRef.current = map;
     map.on('zoomend', () => updateMarkersRef.current());
