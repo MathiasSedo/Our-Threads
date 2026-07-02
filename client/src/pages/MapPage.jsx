@@ -97,6 +97,7 @@ export default function MapPage() {
       if (pending.type === 'forId') {
         await api.patch(`/contacts/${pending.id}/location`, coords).catch(() => {});
         setContacts(prev => prev.map(c => c.id === Number(pending.id) ? { ...c, ...coords } : c));
+        sessionStorage.setItem(`pinCoords_${pending.id}`, JSON.stringify(coords));
       } else {
         sessionStorage.setItem('pinNewCoords', JSON.stringify(coords));
       }

@@ -76,7 +76,8 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
       setError('Name is required.');
       return;
     }
-    if (!manualCoords && (!form.city || !form.country)) {
+    const hasCoords = manualCoords || (initial.lat && initial.lng);
+    if (!hasCoords && (!form.city || !form.country)) {
       setError('City and country are required — or tap ⊕ Pin location on the map to place it manually.');
       return;
     }
