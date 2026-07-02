@@ -371,11 +371,71 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
     };
   }, [handleMouseMove, handleTouchMove]);
 
-  function handleCluster() {
-    const result = runForceLayout(nodes, connections, CANVAS_W, CANVAS_H);
-    result.forEach(n => { posRef.current[n.id] = { x: n.x, y: n.y }; });
+  function applyLayout(positioned) {
+    positioned.forEach(n => { posRef.current[n.id] = { x: n.x, y: n.y }; });
     savePositions(posRef.current);
-    setNodes(result);
+    setNodes(positioned);
+  }
+
+  function handleCluster() {
+    applyLayout(runForceLayout(nodes, connections, CANVAS_W, CANVAS_H));
+  }
+
+  function groupLayout(getGroup) {
+    // Collect groups and assign nodes to them
+    const groups = {};
+    nodes.forEach(n => {
+      const g = getGroup(n) || 'Other';
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(n);
+    });
+    const keys = Object.keys(groups);
+    const cols = Math.ceil(Math.sqrt(keys.length));
+    const rows = Math.ceil(keys.length / cols);
+    const cellW = CANVAS_W / cols;
+    const cellH = CANVAS_H / rows;
+    const result = [...nodes];
+    keys.forEach((key, gi) => {
+      const col = gi % cols;
+      const row = Math.floor(gi / cols);
+      const cx = cellW * col + cellW / 2;
+      const cy = cellH * row + cellH / 2;
+      const members = groups[key];
+      const ringR = Math.min(cellW, cellH) * 0.3;
+      members.forEach((n, i) => {
+        const angle = (2 * Math.PI * i) / members.length - Math.PI / 2;
+        const r = members.length === 1 ? 0 : ringR;
+        const x = cx + Math.cos(angle) * r;
+        const y = cy + Math.sin(angle) * r;
+        const idx = result.findIndex(m => m.id === n.id);
+        result[idx] = { ...result[idx], x, y };
+      });
+    });
+    applyLayout(result);
+    return groups;
+  }
+
+  function handleGroupByTag() {
+    groupLayout(n => n.tags?.[0]?.name || 'Untagged');
+  }
+
+  function handleGroupByCountry() {
+    groupLayout(n => n.home_country || n.country || 'Unknown');
+  }
+
+  function handleGroupByDate() {
+    const sorted = [...nodes].sort((a, b) => {
+      if (!a.date_met && !b.date_met) return 0;
+      if (!a.date_met) return 1;
+      if (!b.date_met) return -1;
+      return a.date_met.localeCompare(b.date_met);
+    });
+    const result = sorted.map((n, i) => {
+      const x = NODE_R * 2 + (i / Math.max(sorted.length - 1, 1)) * (CANVAS_W - NODE_R * 4);
+      const y = CANVAS_H / 2 + Math.sin(i * 1.3) * (CANVAS_H * 0.28);
+      return { ...n, x, y };
+    });
+    applyLayout(result);
   }
 
   return (
@@ -385,7 +445,12 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
       )}
       {contacts.length > 0 && (
         <div className="web-toolbar">
-          <button className="web-tool-btn" onClick={handleCluster}>Cluster</button>
+          <div className="web-tool-group">
+            <button className="web-tool-btn" onClick={handleCluster}>Cluster</button>
+            <button className="web-tool-btn" onClick={handleGroupByTag}>By tag</button>
+            <button className="web-tool-btn" onClick={handleGroupByCountry}>By country</button>
+            <button className="web-tool-btn" onClick={handleGroupByDate}>By date</button>
+          </div>
           <div className="web-zoom-group">
             <button className="web-tool-btn" onClick={() => zoomBy(1 / 1.3)}>−</button>
             <button className="web-tool-btn" onClick={resetView}>Reset</button>

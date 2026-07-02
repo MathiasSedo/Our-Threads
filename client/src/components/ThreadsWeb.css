@@ -92,9 +92,15 @@
   gap: 0.5rem;
 }
 
+.web-tool-group {
+  display: flex;
+  gap: 0.25rem;
+}
+
 .web-zoom-group {
   display: flex;
   gap: 0.25rem;
+  margin-left: auto;
 }
 
 .web-tool-btn {
