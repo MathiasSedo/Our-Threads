@@ -75,6 +75,7 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
   const [nodes, setNodes] = useState([]);
   const [hovered, setHovered] = useState(null);
   const [focused, setFocused] = useState(null);
+  const [groupRegions, setGroupRegions] = useState(null); // [{label, cx, cy, r}]
   const [viewSize, setViewSize] = useState({ w: 800, h: 520 });
   const [view, setView] = useState({ x: 0, y: 0, k: 1 }); // pan/zoom transform
   const [bends, setBends] = useState(loadBends()); // connection id -> control-point offset (canvas units)
@@ -378,11 +379,11 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
   }
 
   function handleCluster() {
+    setGroupRegions(null);
     applyLayout(runForceLayout(nodes, connections, CANVAS_W, CANVAS_H));
   }
 
   function groupLayout(getGroup) {
-    // Collect groups and assign nodes to them
     const groups = {};
     nodes.forEach(n => {
       const g = getGroup(n) || 'Other';
@@ -395,6 +396,7 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
     const cellW = CANVAS_W / cols;
     const cellH = CANVAS_H / rows;
     const result = [...nodes];
+    const regions = [];
     keys.forEach((key, gi) => {
       const col = gi % cols;
       const row = Math.floor(gi / cols);
@@ -410,9 +412,10 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
         const idx = result.findIndex(m => m.id === n.id);
         result[idx] = { ...result[idx], x, y };
       });
+      regions.push({ label: key, cx, cy, r: ringR + NODE_R + 18 });
     });
+    setGroupRegions(regions);
     applyLayout(result);
-    return groups;
   }
 
   function handleGroupByTag() {
@@ -424,6 +427,7 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
   }
 
   function handleGroupByDate() {
+    setGroupRegions(null);
     const sorted = [...nodes].sort((a, b) => {
       if (!a.date_met && !b.date_met) return 0;
       if (!a.date_met) return 1;
@@ -497,6 +501,15 @@ export default function ThreadsWeb({ contacts, connections, onOpenContact }) {
             x={-CANVAS_W} y={-CANVAS_H} width={CANVAS_W * 3} height={CANVAS_H * 3}
             fill="url(#webWeaveB)" className="web-weave-bg"
           />
+          {groupRegions?.map(({ label, cx, cy, r }) => (
+            <g key={label} className="web-region">
+              <circle cx={cx} cy={cy} r={r} className="web-region-circle" />
+              <text x={cx} y={cy - r + 14} className="web-region-label" textAnchor="middle">
+                {label}
+              </text>
+            </g>
+          ))}
+
           {connections.map(cn => {
             const a = nodeMap[cn.contact_id_1];
             const b = nodeMap[cn.contact_id_2];

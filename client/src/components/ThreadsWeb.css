@@ -92,6 +92,23 @@
   gap: 0.5rem;
 }
 
+.web-region-circle {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+  opacity: 0.5;
+}
+
+.web-region-label {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  fill: var(--ink-faint);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
 .web-tool-group {
   display: flex;
   gap: 0.25rem;
