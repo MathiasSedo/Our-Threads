@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi.js';
 import TagPill from './TagPill.jsx';
 import AutocompleteInput from './AutocompleteInput.jsx';
-import { getCountrySuggestions, getCitySuggestions } from '../hooks/useGeo.js';
+import { getCountrySuggestions, getCitySuggestions, lookupCoords } from '../hooks/useGeo.js';
 import { geocodeCandidates } from '../utils/geocode.js';
 import './ContactForm.css';
 
@@ -79,7 +79,8 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
       return;
     }
     const hasCoords = manualCoords || (initial.lat && initial.lng);
-    if (!hasCoords && (!form.city || !form.country)) {
+    const hasVisitIn = form.home_city && form.home_country;
+    if (!hasCoords && !hasVisitIn && (!form.city || !form.country)) {
       setError('City and country are required — or tap ⊕ Pin location on the map to place it manually.');
       return;
     }
@@ -89,6 +90,11 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
       if (manualCoords) {
         await finishSave(manualCoords);
         return;
+      }
+      // If no met-in city but visit-in is filled, use visit-in coords as the main location
+      if ((!form.city || !form.country) && hasVisitIn) {
+        const visitCoords = lookupCoords(form.home_city, form.home_country);
+        if (visitCoords) { await finishSave(visitCoords); return; }
       }
       const locationUnchanged = initial.id
         && form.city === initial.city
