@@ -371,13 +371,6 @@ export default function MapPage() {
         </div>
       )}
 
-      {tripPickMode && (
-        <div className="trip-pick-banner">
-          Tap a person on the map to add them to the trip
-          <button className="trip-pick-done" onClick={stopTripPick}>Done</button>
-        </div>
-      )}
-
       {showTrips && (
         <TripsPanel
           trips={trips}
