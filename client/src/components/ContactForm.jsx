@@ -236,7 +236,7 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
 
       <div className="form-row">
         <div className="form-group">
-          <label>Visit in — city</label>
+          <label>Lives in — city</label>
           <AutocompleteInput
             value={form.home_city}
             onChange={v => { setForm(f => ({ ...f, home_city: v })); setSuggestedHomeCoords(null); }}

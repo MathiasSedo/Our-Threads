@@ -101,6 +101,24 @@ export async function initDb() {
       contact_id_2 INTEGER NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
       UNIQUE(user_id, contact_id_1, contact_id_2)
     );
+
+    CREATE TABLE IF NOT EXISTS trips (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      date_start TEXT,
+      date_end TEXT,
+      description TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS trip_contacts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+      contact_id INTEGER NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
+      order_index INTEGER DEFAULT 0,
+      UNIQUE(trip_id, contact_id)
+    );
   `);
 }
 

@@ -335,3 +335,36 @@
 
   .map-popup { left: 0.75rem; right: 0.75rem; bottom: 0.75rem; }
 }
+
+.trip-pick-banner {
+  position: absolute;
+  top: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 900;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+.trip-pick-done {
+  background: none;
+  border: 1px solid var(--bg);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.trip-pick-done:hover {
+  background: var(--bg);
+  color: var(--ink);
+}

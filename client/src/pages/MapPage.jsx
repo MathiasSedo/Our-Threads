@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi.js';
 import TagPill from '../components/TagPill.jsx';
 import ContactForm from '../components/ContactForm.jsx';
+import TripsPanel from '../components/TripsPanel.jsx';
 import { lookupCoords } from '../hooks/useGeo.js';
 import { blendTagColor } from '../utils/tagColors.js';
 import './MapPage.css';
@@ -29,8 +30,18 @@ export default function MapPage() {
   const [manualCoords, setManualCoords] = useState(null);
   const [pinForContact, setPinForContact] = useState(null);
   const [savedForm, setSavedForm] = useState(null);
+  const [trips, setTrips] = useState([]);
+  const [activeTrip, setActiveTrip] = useState(null);
+  const [showTrips, setShowTrips] = useState(false);
+  const [tripPickMode, setTripPickMode] = useState(false);
+  const tripLineRef = useRef(null);
+  const tripPickRef = useRef(null); // { trip, onAdd } when in pick mode
 
   const CORE_ORDER = ['Visit', 'Work', 'Family', 'Invite for wedding'];
+
+  useEffect(() => {
+    api.get('/trips').then(setTrips).catch(() => {});
+  }, []);
 
   useEffect(() => {
     Promise.all([api.get('/contacts'), api.get('/tags')])
@@ -86,6 +97,26 @@ export default function MapPage() {
 
   useEffect(() => { updateMarkers(); }, [contacts, activeTag]);
   useEffect(() => { updateMarkersRef.current = updateMarkers; });
+
+  useEffect(() => {
+    if (!leafletRef.current) return;
+    if (tripLineRef.current) { tripLineRef.current.remove(); tripLineRef.current = null; }
+    if (!activeTrip) return;
+    const pts = activeTrip.contacts
+      .sort((a, b) => a.order_index - b.order_index)
+      .map(c => [c.home_lat || c.lat, c.home_lng || c.lng])
+      .filter(([lat, lng]) => lat && lng);
+    if (pts.length < 2) return;
+    import('leaflet').then(({ default: L }) => {
+      tripLineRef.current = L.polyline(pts, {
+        color: 'var(--ink, #2c2c2c)',
+        weight: 2,
+        dashArray: '6 6',
+        opacity: 0.7,
+      }).addTo(leafletRef.current);
+      leafletRef.current.fitBounds(tripLineRef.current.getBounds(), { padding: [40, 40] });
+    });
+  }, [activeTrip]);
 
   // Capture pin intent from URL immediately, activate once map is ready
   useEffect(() => {
@@ -205,6 +236,11 @@ export default function MapPage() {
           fn({ lat: pinLat, lng: pinLng });
           return;
         }
+        if (tripPickRef.current) {
+          L.DomEvent.stopPropagation(e);
+          tripPickRef.current.onAdd(contact);
+          return;
+        }
         if (!isVis) return;
         const nearby = contacts.filter(c => {
           const cLat = c.home_lat || c.lat;
@@ -256,6 +292,31 @@ export default function MapPage() {
     leafletRef.current?.off('click');
   }
 
+  function startTripPick(trip, onTripsChange) {
+    setTripPickMode(true);
+    if (leafletRef.current) leafletRef.current.getContainer().style.cursor = 'crosshair';
+    tripPickRef.current = {
+      trip,
+      onAdd: async (contact) => {
+        const alreadyIn = trip.contacts.some(c => c.contact_id === contact.id);
+        if (alreadyIn) return;
+        const order = trip.contacts.length;
+        await api.post(`/trips/${trip.id}/contacts`, { contact_id: contact.id, order_index: order }).catch(() => {});
+        const newContact = { contact_id: contact.id, order_index: order, name: contact.name, lat: contact.lat, lng: contact.lng, home_lat: contact.home_lat, home_lng: contact.home_lng, city: contact.city, home_city: contact.home_city };
+        const updated = { ...trip, contacts: [...trip.contacts, newContact] };
+        tripPickRef.current = { ...tripPickRef.current, trip: updated };
+        onTripsChange(prev => prev.map(t => t.id === trip.id ? updated : t));
+        setActiveTrip(updated);
+      },
+    };
+  }
+
+  function stopTripPick() {
+    setTripPickMode(false);
+    tripPickRef.current = null;
+    if (leafletRef.current) leafletRef.current.getContainer().style.cursor = '';
+  }
+
   return (
     <div className="map-page">
       <div className="map-header">
@@ -280,6 +341,12 @@ export default function MapPage() {
         >
           {placingPin ? 'Tap the map…' : '⊕ Pin'}
         </button>
+        <button
+          className={`map-pin-btn${showTrips ? ' active' : ''}`}
+          onClick={() => setShowTrips(v => !v)}
+        >
+          ✈ Travels
+        </button>
       </div>
 
       {adding && (
@@ -302,6 +369,25 @@ export default function MapPage() {
             />
           </div>
         </div>
+      )}
+
+      {tripPickMode && (
+        <div className="trip-pick-banner">
+          Tap a person on the map to add them to the trip
+          <button className="trip-pick-done" onClick={stopTripPick}>Done</button>
+        </div>
+      )}
+
+      {showTrips && (
+        <TripsPanel
+          trips={trips}
+          onTripsChange={setTrips}
+          activeTrip={activeTrip}
+          tripPickMode={tripPickMode}
+          onSelectTrip={trip => { setActiveTrip(trip); if (!trip) stopTripPick(); }}
+          onStartPick={(trip) => startTripPick(trip, setTrips)}
+          onStopPick={stopTripPick}
+        />
       )}
 
       <div className="map-frame">
