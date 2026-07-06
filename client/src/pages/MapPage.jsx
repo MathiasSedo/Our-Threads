@@ -406,7 +406,7 @@ export default function MapPage() {
     });
 
     const updatedContacts = trip.contacts.map(c => {
-      const u = contactUpdates.find(x => x.id === c.id);
+      const u = contactUpdates.find(x => x.id === c.contact_id);
       return u ? { ...c, order_index: u.order_index } : c;
     });
     const updatedWaypoints = trip.waypoints.map(w => {
