@@ -8,6 +8,23 @@ import { lookupCoords } from '../hooks/useGeo.js';
 import { blendTagColor } from '../utils/tagColors.js';
 import './MapPage.css';
 
+function tripRoutePoints(trip) {
+  const contacts = (trip.contacts || []).map(c => ({
+    order: c.order_index,
+    lat: c.home_lat || c.lat,
+    lng: c.home_lng || c.lng,
+  }));
+  const waypoints = (trip.waypoints || []).map(w => ({
+    order: w.order_index,
+    lat: w.lat,
+    lng: w.lng,
+  }));
+  return [...contacts, ...waypoints]
+    .sort((a, b) => a.order - b.order)
+    .filter(p => p.lat && p.lng)
+    .map(p => [p.lat, p.lng]);
+}
+
 export default function MapPage() {
   const api = useApi();
   const navigate = useNavigate();
@@ -16,8 +33,12 @@ export default function MapPage() {
   const leafletRef = useRef(null);
   const markersRef = useRef([]);
   const updateMarkersRef = useRef(() => {});
-  const pendingPinRef = useRef(null); // { type: 'forId'|'forNew', id? }
-  const commitPinRef = useRef(null); // set when pin mode is active
+  const pendingPinRef = useRef(null);
+  const commitPinRef = useRef(null);
+  const tripLinesRef = useRef({});
+  const tripPickRef = useRef(null);
+  const tripMapClickRef = useRef(null);
+
   const [contacts, setContacts] = useState([]);
   const [allTags, setAllTags] = useState(['All']);
   const [activeTag, setActiveTag] = useState('All');
@@ -28,29 +49,24 @@ export default function MapPage() {
   const [adding, setAdding] = useState(false);
   const [placingPin, setPlacingPin] = useState(false);
   const [manualCoords, setManualCoords] = useState(null);
-  const [pinForContact, setPinForContact] = useState(null);
   const [savedForm, setSavedForm] = useState(null);
   const [trips, setTrips] = useState([]);
-  const [activeTrip, setActiveTrip] = useState(null);
+  const [activeTripIds, setActiveTripIds] = useState(new Set());
   const [showTrips, setShowTrips] = useState(false);
   const [tripPickMode, setTripPickMode] = useState(false);
-  const tripLineRef = useRef(null);
-  const tripPickRef = useRef(null); // { trip, onAdd } when in pick mode
 
   const CORE_ORDER = ['Visit', 'Work', 'Family', 'Invite for wedding'];
 
   useEffect(() => {
-    api.get('/trips').then(setTrips).catch(() => {});
+    api.get('/trips').then(ts => setTrips(ts || [])).catch(() => {});
   }, []);
 
   useEffect(() => {
     Promise.all([api.get('/contacts'), api.get('/tags')])
       .then(([cs, ts]) => {
         const list = cs || [];
-        // Fill missing coords from bundled city data — instant, no API call
         const filled = list.map(c => {
           let updated = c;
-          // Back-fill main coords
           if (!c.lat || !c.lng) {
             const coords = lookupCoords(c.city, c.country);
             if (coords) {
@@ -58,7 +74,6 @@ export default function MapPage() {
               updated = { ...updated, ...coords };
             }
           }
-          // Back-fill home coords (may have been null if diacritics failed before fix)
           if (c.home_city && c.home_country && (!c.home_lat || !c.home_lng)) {
             const homeCoords = lookupCoords(c.home_city, c.home_country);
             if (homeCoords) {
@@ -98,34 +113,42 @@ export default function MapPage() {
   useEffect(() => { updateMarkers(); }, [contacts, activeTag]);
   useEffect(() => { updateMarkersRef.current = updateMarkers; });
 
+  // Redraw polylines whenever trips data or active set changes
   useEffect(() => {
     if (!leafletRef.current) return;
-    if (tripLineRef.current) { tripLineRef.current.remove(); tripLineRef.current = null; }
-    if (!activeTrip) return;
-    const pts = activeTrip.contacts
-      .sort((a, b) => a.order_index - b.order_index)
-      .map(c => [c.home_lat || c.lat, c.home_lng || c.lng])
-      .filter(([lat, lng]) => lat && lng);
-    if (pts.length < 2) return;
     import('leaflet').then(({ default: L }) => {
-      tripLineRef.current = L.polyline(pts, {
-        color: '#8a7a6a',
-        weight: 1.5,
-        dashArray: '4 8',
-        opacity: 0.5,
-      }).addTo(leafletRef.current);
-      leafletRef.current.fitBounds(tripLineRef.current.getBounds(), { padding: [40, 40] });
+      // Remove lines for trips no longer active
+      Object.keys(tripLinesRef.current).forEach(id => {
+        if (!activeTripIds.has(Number(id))) {
+          tripLinesRef.current[id]?.remove();
+          delete tripLinesRef.current[id];
+        }
+      });
+      // Draw/update lines for active trips
+      activeTripIds.forEach(id => {
+        const trip = trips.find(t => t.id === id);
+        if (!trip) return;
+        const pts = tripRoutePoints(trip);
+        if (tripLinesRef.current[id]) {
+          tripLinesRef.current[id].setLatLngs(pts);
+        } else if (pts.length >= 2) {
+          tripLinesRef.current[id] = L.polyline(pts, {
+            color: '#8a7a6a',
+            weight: 1.5,
+            dashArray: '4 8',
+            opacity: 0.5,
+          }).addTo(leafletRef.current);
+        }
+      });
     });
-  }, [activeTrip]);
+  }, [trips, activeTripIds]);
 
-  // Capture pin intent from URL immediately, activate once map is ready
   useEffect(() => {
     const pinForId = searchParams.get('pinFor');
     const pinForNew = searchParams.get('pinForNew');
     if (!pinForId && !pinForNew) return;
     setSearchParams({}, { replace: true });
     pendingPinRef.current = pinForId ? { type: 'forId', id: pinForId } : { type: 'forNew' };
-    // If map already ready, activate now
     if (leafletRef.current) activatePendingPin();
   }, [searchParams]);
 
@@ -142,7 +165,6 @@ export default function MapPage() {
       sessionStorage.setItem('pinNewCoords', JSON.stringify(coords));
     }
     setPlacingPin(false);
-    setPinForContact(null);
     leafletRef.current.getContainer().style.cursor = '';
     navigate('/threads');
   }
@@ -197,7 +219,6 @@ export default function MapPage() {
       }, () => {});
     }
 
-    // Activate any pin that was requested before the map was ready
     if (pendingPinRef.current) activatePendingPin();
   }
 
@@ -215,7 +236,6 @@ export default function MapPage() {
     const showCityLabels = zoom >= 6;
 
     contacts.forEach(contact => {
-      // Prefer "visit in" coords over "met in" coords for pin placement
       const pinLat = contact.home_lat || contact.lat;
       const pinLng = contact.home_lng || contact.lng;
       if (!pinLat || !pinLng) return;
@@ -238,7 +258,7 @@ export default function MapPage() {
         }
         if (tripPickRef.current) {
           L.DomEvent.stopPropagation(e);
-          tripPickRef.current.onAdd(contact);
+          tripPickRef.current.onAddContact(contact);
           return;
         }
         if (!isVis) return;
@@ -292,30 +312,69 @@ export default function MapPage() {
     leafletRef.current?.off('click');
   }
 
-  function startTripPick(trip, onTripsChange) {
+  function startTripPick(trip) {
     setTripPickMode(true);
     if (leafletRef.current) leafletRef.current.getContainer().style.cursor = 'crosshair';
+
     tripPickRef.current = {
       trip,
-      onAdd: async (contact) => {
+      onAddContact: async (contact) => {
         const current = tripPickRef.current.trip;
-        const alreadyIn = current.contacts.some(c => c.contact_id === contact.id);
-        if (alreadyIn) return;
-        const order = current.contacts.length;
+        if (current.contacts.some(c => c.contact_id === contact.id)) return;
+        const order = current.contacts.length + current.waypoints.length;
         await api.post(`/trips/${current.id}/contacts`, { contact_id: contact.id, order_index: order }).catch(() => {});
         const newContact = { contact_id: contact.id, order_index: order, name: contact.name, lat: contact.lat, lng: contact.lng, home_lat: contact.home_lat, home_lng: contact.home_lng, city: contact.city, home_city: contact.home_city };
         const updated = { ...current, contacts: [...current.contacts, newContact] };
         tripPickRef.current.trip = updated;
-        onTripsChange(prev => prev.map(t => t.id === current.id ? updated : t));
-        setActiveTrip(updated);
+        setTrips(prev => prev.map(t => t.id === current.id ? updated : t));
+      },
+      onAddWaypoint: async (latlng) => {
+        const current = tripPickRef.current.trip;
+        const order = current.contacts.length + current.waypoints.length;
+        const row = await api.post(`/trips/${current.id}/waypoints`, { lat: latlng.lat, lng: latlng.lng, order_index: order }).catch(() => null);
+        if (!row) return;
+        const updated = { ...current, waypoints: [...current.waypoints, row] };
+        tripPickRef.current.trip = updated;
+        setTrips(prev => prev.map(t => t.id === current.id ? updated : t));
       },
     };
+
+    // Map click on empty space → add waypoint
+    const handler = (e) => {
+      if (tripPickRef.current) tripPickRef.current.onAddWaypoint(e.latlng);
+    };
+    tripMapClickRef.current = handler;
+    leafletRef.current?.on('click', handler);
   }
 
   function stopTripPick() {
     setTripPickMode(false);
+    if (tripMapClickRef.current) {
+      leafletRef.current?.off('click', tripMapClickRef.current);
+      tripMapClickRef.current = null;
+    }
     tripPickRef.current = null;
     if (leafletRef.current) leafletRef.current.getContainer().style.cursor = '';
+  }
+
+  function toggleTripActive(trip, fitBounds = false) {
+    setActiveTripIds(prev => {
+      const next = new Set(prev);
+      if (next.has(trip.id)) {
+        next.delete(trip.id);
+      } else {
+        next.add(trip.id);
+        if (fitBounds) {
+          const pts = tripRoutePoints(trip);
+          if (pts.length >= 2) {
+            import('leaflet').then(({ default: L }) => {
+              leafletRef.current?.fitBounds(L.latLngBounds(pts), { padding: [40, 40] });
+            });
+          }
+        }
+      }
+      return next;
+    });
   }
 
   return (
@@ -375,12 +434,22 @@ export default function MapPage() {
       {showTrips && (
         <TripsPanel
           trips={trips}
-          onTripsChange={setTrips}
-          activeTrip={activeTrip}
+          activeTripIds={activeTripIds}
           tripPickMode={tripPickMode}
-          onSelectTrip={trip => { setActiveTrip(trip); if (!trip) stopTripPick(); }}
-          onStartPick={(trip) => startTripPick(trip, setTrips)}
+          onTripsChange={setTrips}
+          onToggleTrip={toggleTripActive}
+          onStartPick={startTripPick}
           onStopPick={stopTripPick}
+          onClose={() => { setShowTrips(false); stopTripPick(); }}
+          onRemoveWaypoint={(tripId, waypointId) => {
+            setTrips(prev => prev.map(t => t.id === tripId
+              ? { ...t, waypoints: t.waypoints.filter(w => w.id !== waypointId) }
+              : t
+            ));
+            if (tripPickRef.current?.trip?.id === tripId) {
+              tripPickRef.current.trip = { ...tripPickRef.current.trip, waypoints: tripPickRef.current.trip.waypoints.filter(w => w.id !== waypointId) };
+            }
+          }}
         />
       )}
 

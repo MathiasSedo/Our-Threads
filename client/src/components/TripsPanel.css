@@ -20,6 +20,36 @@
   align-items: center;
   padding: 8px 10px 6px;
   border-bottom: 1px solid var(--ink-faint);
+  gap: 6px;
+}
+
+.trips-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trips-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-faint);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.trips-close-btn:hover {
+  color: var(--ink);
+}
+
+.trip-route-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  flex-shrink: 0;
+  transition: background 0.15s;
 }
 
 .trips-title {
@@ -309,4 +339,9 @@
 @keyframes trip-pick-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+.trip-waypoint-name {
+  font-style: italic;
+  color: var(--ink-faint);
 }

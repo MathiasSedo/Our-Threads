@@ -10,7 +10,7 @@ import {
   addEncounter, deleteEncounter, listTags, createTag,
   listConnections, createConnection, deleteConnection
 } from './contacts.js';
-import { listTrips, createTrip, updateTrip, deleteTrip, addTripContact, removeTripContact } from './trips.js';
+import { listTrips, createTrip, updateTrip, deleteTrip, addTripContact, removeTripContact, addWaypoint, removeWaypoint } from './trips.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -51,6 +51,8 @@ app.put('/api/trips/:id', requireAuth, ah(updateTrip));
 app.delete('/api/trips/:id', requireAuth, ah(deleteTrip));
 app.post('/api/trips/:id/contacts', requireAuth, ah(addTripContact));
 app.delete('/api/trips/:id/contacts/:contactId', requireAuth, ah(removeTripContact));
+app.post('/api/trips/:id/waypoints', requireAuth, ah(addWaypoint));
+app.delete('/api/trips/:id/waypoints/:waypointId', requireAuth, ah(removeWaypoint));
 
 // Connections
 app.get('/api/connections', requireAuth, ah(listConnections));
