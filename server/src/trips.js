@@ -55,7 +55,7 @@ export async function removeTripContact(req, res) {
 export async function updateOrder(req, res) {
   const { contacts = [], waypoints = [] } = req.body;
   for (const { id, order_index } of contacts) {
-    await db.prepare('UPDATE trip_contacts SET order_index=? WHERE id=? AND trip_id=?').run(order_index, id, req.params.id);
+    await db.prepare('UPDATE trip_contacts SET order_index=? WHERE contact_id=? AND trip_id=?').run(order_index, id, req.params.id);
   }
   for (const { id, order_index } of waypoints) {
     await db.prepare('UPDATE trip_waypoints SET order_index=? WHERE id=? AND trip_id=?').run(order_index, id, req.params.id);
