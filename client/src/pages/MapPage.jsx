@@ -298,14 +298,15 @@ export default function MapPage() {
     tripPickRef.current = {
       trip,
       onAdd: async (contact) => {
-        const alreadyIn = trip.contacts.some(c => c.contact_id === contact.id);
+        const current = tripPickRef.current.trip;
+        const alreadyIn = current.contacts.some(c => c.contact_id === contact.id);
         if (alreadyIn) return;
-        const order = trip.contacts.length;
-        await api.post(`/trips/${trip.id}/contacts`, { contact_id: contact.id, order_index: order }).catch(() => {});
+        const order = current.contacts.length;
+        await api.post(`/trips/${current.id}/contacts`, { contact_id: contact.id, order_index: order }).catch(() => {});
         const newContact = { contact_id: contact.id, order_index: order, name: contact.name, lat: contact.lat, lng: contact.lng, home_lat: contact.home_lat, home_lng: contact.home_lng, city: contact.city, home_city: contact.home_city };
-        const updated = { ...trip, contacts: [...trip.contacts, newContact] };
-        tripPickRef.current = { ...tripPickRef.current, trip: updated };
-        onTripsChange(prev => prev.map(t => t.id === trip.id ? updated : t));
+        const updated = { ...current, contacts: [...current.contacts, newContact] };
+        tripPickRef.current.trip = updated;
+        onTripsChange(prev => prev.map(t => t.id === current.id ? updated : t));
         setActiveTrip(updated);
       },
     };

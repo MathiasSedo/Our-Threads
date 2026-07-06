@@ -39,8 +39,7 @@
 }
 
 .trips-new-btn:hover {
-  background: var(--ink);
-  color: var(--bg);
+  background: color-mix(in srgb, var(--ink) 10%, var(--bg));
 }
 
 .trip-form {
