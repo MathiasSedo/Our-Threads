@@ -69,15 +69,20 @@
 .trip-dates {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .trip-dates span {
   color: var(--ink-faint);
+  flex-shrink: 0;
 }
 
 .trip-dates .trip-input {
+  width: 0;
   flex: 1;
+  min-width: 0;
+  font-size: 0.68rem;
+  padding: 3px 4px;
 }
 
 .trip-form-actions {

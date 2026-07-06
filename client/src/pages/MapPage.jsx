@@ -109,10 +109,10 @@ export default function MapPage() {
     if (pts.length < 2) return;
     import('leaflet').then(({ default: L }) => {
       tripLineRef.current = L.polyline(pts, {
-        color: 'var(--ink, #2c2c2c)',
-        weight: 2,
-        dashArray: '6 6',
-        opacity: 0.7,
+        color: '#8a7a6a',
+        weight: 1.5,
+        dashArray: '4 8',
+        opacity: 0.5,
       }).addTo(leafletRef.current);
       leafletRef.current.fitBounds(tripLineRef.current.getBounds(), { padding: [40, 40] });
     });
