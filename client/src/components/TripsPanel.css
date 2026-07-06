@@ -286,13 +286,19 @@
 
 .trip-pick-active-btn {
   width: 100%;
-  background: var(--ink);
-  border: none;
+  background: none;
+  border: 1px dashed var(--ink);
   padding: 5px 8px;
   font-family: var(--font-mono);
   font-size: 0.74rem;
-  color: var(--bg);
+  color: var(--ink);
   cursor: pointer;
   text-align: left;
   margin-top: 4px;
+  animation: trip-pick-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes trip-pick-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
