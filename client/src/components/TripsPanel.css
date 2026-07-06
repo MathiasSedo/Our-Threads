@@ -97,13 +97,17 @@
 }
 
 .trip-btn-primary {
-  background: var(--ink);
+  background: none;
   border: 1px solid var(--ink);
   padding: 3px 8px;
   font-family: var(--font-mono);
   font-size: 0.72rem;
   cursor: pointer;
-  color: var(--bg);
+  color: var(--ink);
+}
+
+.trip-btn-primary:hover {
+  background: color-mix(in srgb, var(--ink) 10%, var(--bg));
 }
 
 .trips-list {
