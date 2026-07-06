@@ -52,6 +52,23 @@ export async function removeTripContact(req, res) {
   res.json({ ok: true });
 }
 
+export async function updateOrder(req, res) {
+  const { contacts = [], waypoints = [] } = req.body;
+  for (const { id, order_index } of contacts) {
+    await db.prepare('UPDATE trip_contacts SET order_index=? WHERE id=? AND trip_id=?').run(order_index, id, req.params.id);
+  }
+  for (const { id, order_index } of waypoints) {
+    await db.prepare('UPDATE trip_waypoints SET order_index=? WHERE id=? AND trip_id=?').run(order_index, id, req.params.id);
+  }
+  res.json({ ok: true });
+}
+
+export async function updateWaypointLabel(req, res) {
+  const { label } = req.body;
+  await db.prepare('UPDATE trip_waypoints SET label=? WHERE id=? AND trip_id=?').run(label || null, req.params.waypointId, req.params.id);
+  res.json({ ok: true });
+}
+
 export async function addWaypoint(req, res) {
   const { lat, lng, label, order_index } = req.body;
   if (lat == null || lng == null) return res.status(400).json({ error: 'lat and lng required' });

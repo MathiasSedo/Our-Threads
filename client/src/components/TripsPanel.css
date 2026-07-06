@@ -345,3 +345,29 @@
   font-style: italic;
   color: var(--ink-faint);
 }
+
+.trip-reorder-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.trip-reorder-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-faint);
+  font-size: 0.6rem;
+  padding: 0;
+  line-height: 1.1;
+}
+
+.trip-reorder-btn:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.trip-reorder-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+}

@@ -368,3 +368,47 @@
   background: var(--bg);
   color: var(--ink);
 }
+
+.waypoint-label-form {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg);
+  border: 1.5px solid var(--ink);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  z-index: 900;
+  width: 220px;
+  font-family: var(--font-mono);
+}
+
+.waypoint-label-hint {
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.03em;
+}
+
+.waypoint-label-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--ink-faint);
+  background: var(--bg);
+  padding: 5px 7px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--ink);
+}
+
+.waypoint-label-input:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+
+.waypoint-label-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}

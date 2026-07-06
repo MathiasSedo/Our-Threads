@@ -10,12 +10,12 @@ function formatDateRange(start, end) {
 }
 
 function mergedStops(trip) {
-  const contacts = (trip.contacts || []).map(c => ({ type: 'contact', order: c.order_index, id: c.contact_id, name: c.name, sub: c.home_city || c.city }));
-  const waypoints = (trip.waypoints || []).map(w => ({ type: 'waypoint', order: w.order_index, id: w.id, name: w.label || `${w.lat.toFixed(2)}°, ${w.lng.toFixed(2)}°`, sub: null }));
+  const contacts = (trip.contacts || []).map(c => ({ type: 'contact', order: c.order_index, rowId: c.id ?? c.contact_id, id: c.contact_id, name: c.name, sub: c.home_city || c.city }));
+  const waypoints = (trip.waypoints || []).map(w => ({ type: 'waypoint', order: w.order_index, rowId: w.id, id: w.id, name: w.label || `${w.lat.toFixed(2)}°, ${w.lng.toFixed(2)}°`, sub: null }));
   return [...contacts, ...waypoints].sort((a, b) => a.order - b.order);
 }
 
-export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTripsChange, onToggleTrip, onStartPick, onStopPick, onClose, onRemoveWaypoint }) {
+export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTripsChange, onToggleTrip, onStartPick, onStopPick, onClose, onRemoveWaypoint, onReorder }) {
   const api = useApi();
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -139,7 +139,10 @@ export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTrips
                 <div className="trip-contacts">
                   {stops.map((stop, i) => (
                     <div key={`${stop.type}-${stop.id}`} className="trip-contact-row">
-                      <span className="trip-contact-idx">{i + 1}</span>
+                      <div className="trip-reorder-btns">
+                        <button className="trip-reorder-btn" disabled={i === 0} onClick={() => onReorder(trip, stops, i, -1)}>↑</button>
+                        <button className="trip-reorder-btn" disabled={i === stops.length - 1} onClick={() => onReorder(trip, stops, i, 1)}>↓</button>
+                      </div>
                       <span className={`trip-contact-name${stop.type === 'waypoint' ? ' trip-waypoint-name' : ''}`}>{stop.name}</span>
                       {stop.sub && <span className="trip-contact-city">{stop.sub}</span>}
                       <button className="trip-icon-btn" onClick={() =>

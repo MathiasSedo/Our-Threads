@@ -8,6 +8,27 @@ import { lookupCoords } from '../hooks/useGeo.js';
 import { blendTagColor } from '../utils/tagColors.js';
 import './MapPage.css';
 
+function WaypointLabelForm({ onConfirm, onSkip }) {
+  const [label, setLabel] = useState('');
+  return (
+    <div className="waypoint-label-form">
+      <span className="waypoint-label-hint">Name this stop</span>
+      <input
+        className="waypoint-label-input"
+        placeholder="City, landmark…"
+        value={label}
+        onChange={e => setLabel(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') onConfirm(label); if (e.key === 'Escape') onSkip(); }}
+        autoFocus
+      />
+      <div className="waypoint-label-actions">
+        <button className="trip-btn-ghost" onClick={onSkip}>Skip</button>
+        <button className="trip-btn-primary" onClick={() => onConfirm(label)}>Add</button>
+      </div>
+    </div>
+  );
+}
+
 function tripRoutePoints(trip) {
   const contacts = (trip.contacts || []).map(c => ({
     order: c.order_index,
@@ -54,6 +75,7 @@ export default function MapPage() {
   const [activeTripIds, setActiveTripIds] = useState(new Set());
   const [showTrips, setShowTrips] = useState(false);
   const [tripPickMode, setTripPickMode] = useState(false);
+  const [pendingWaypoint, setPendingWaypoint] = useState(null); // { lat, lng, tripId }
 
   const CORE_ORDER = ['Visit', 'Work', 'Family', 'Invite for wedding'];
 
@@ -328,14 +350,9 @@ export default function MapPage() {
         tripPickRef.current.trip = updated;
         setTrips(prev => prev.map(t => t.id === current.id ? updated : t));
       },
-      onAddWaypoint: async (latlng) => {
+      onAddWaypoint: (latlng) => {
         const current = tripPickRef.current.trip;
-        const order = current.contacts.length + current.waypoints.length;
-        const row = await api.post(`/trips/${current.id}/waypoints`, { lat: latlng.lat, lng: latlng.lng, order_index: order }).catch(() => null);
-        if (!row) return;
-        const updated = { ...current, waypoints: [...current.waypoints, row] };
-        tripPickRef.current.trip = updated;
-        setTrips(prev => prev.map(t => t.id === current.id ? updated : t));
+        setPendingWaypoint({ lat: latlng.lat, lng: latlng.lng, tripId: current.id });
       },
     };
 
@@ -355,6 +372,51 @@ export default function MapPage() {
     }
     tripPickRef.current = null;
     if (leafletRef.current) leafletRef.current.getContainer().style.cursor = '';
+  }
+
+  async function confirmWaypoint(label) {
+    if (!pendingWaypoint || !tripPickRef.current) return;
+    const current = tripPickRef.current.trip;
+    const order = current.contacts.length + current.waypoints.length;
+    const row = await api.post(`/trips/${current.id}/waypoints`, {
+      lat: pendingWaypoint.lat,
+      lng: pendingWaypoint.lng,
+      label: label || null,
+      order_index: order,
+    }).catch(() => null);
+    setPendingWaypoint(null);
+    if (!row) return;
+    const updated = { ...current, waypoints: [...current.waypoints, row] };
+    tripPickRef.current.trip = updated;
+    setTrips(prev => prev.map(t => t.id === current.id ? updated : t));
+  }
+
+  async function handleReorder(trip, stops, fromIdx, dir) {
+    const toIdx = fromIdx + dir;
+    if (toIdx < 0 || toIdx >= stops.length) return;
+    const reordered = [...stops];
+    [reordered[fromIdx], reordered[toIdx]] = [reordered[toIdx], reordered[fromIdx]];
+
+    const contactUpdates = [];
+    const waypointUpdates = [];
+    reordered.forEach((stop, i) => {
+      if (stop.order_index === i) return;
+      if (stop.type === 'contact') contactUpdates.push({ id: stop.rowId, order_index: i });
+      else waypointUpdates.push({ id: stop.rowId, order_index: i });
+    });
+
+    const updatedContacts = trip.contacts.map(c => {
+      const u = contactUpdates.find(x => x.id === c.id);
+      return u ? { ...c, order_index: u.order_index } : c;
+    });
+    const updatedWaypoints = trip.waypoints.map(w => {
+      const u = waypointUpdates.find(x => x.id === w.id);
+      return u ? { ...w, order_index: u.order_index } : w;
+    });
+    const updated = { ...trip, contacts: updatedContacts, waypoints: updatedWaypoints };
+    if (tripPickRef.current?.trip?.id === trip.id) tripPickRef.current.trip = updated;
+    setTrips(prev => prev.map(t => t.id === trip.id ? updated : t));
+    api.put(`/trips/${trip.id}/order`, { contacts: contactUpdates, waypoints: waypointUpdates }).catch(() => {});
   }
 
   function toggleTripActive(trip, fitBounds = false) {
@@ -431,6 +493,13 @@ export default function MapPage() {
         </div>
       )}
 
+      {pendingWaypoint && (
+        <WaypointLabelForm
+          onConfirm={confirmWaypoint}
+          onSkip={() => confirmWaypoint(null)}
+        />
+      )}
+
       {showTrips && (
         <TripsPanel
           trips={trips}
@@ -441,6 +510,7 @@ export default function MapPage() {
           onStartPick={startTripPick}
           onStopPick={stopTripPick}
           onClose={() => { setShowTrips(false); stopTripPick(); }}
+          onReorder={handleReorder}
           onRemoveWaypoint={(tripId, waypointId) => {
             setTrips(prev => prev.map(t => t.id === tripId
               ? { ...t, waypoints: t.waypoints.filter(w => w.id !== waypointId) }
