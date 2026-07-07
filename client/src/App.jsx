@@ -4,6 +4,7 @@ import Layout from './components/Layout.jsx';
 import AuthPage from './pages/AuthPage.jsx';
 import ThreadsPage from './pages/ThreadsPage.jsx';
 import MapPage from './pages/MapPage.jsx';
+import JoinPage from './pages/JoinPage.jsx';
 
 function ProtectedRoute({ children }) {
   const { isAuthed } = useAuth();
@@ -12,9 +13,20 @@ function ProtectedRoute({ children }) {
 
 function AppRoutes() {
   const { isAuthed } = useAuth();
+
+  // After login, complete a pending join if one was stored
+  if (isAuthed) {
+    const pendingJoin = sessionStorage.getItem('joinToken');
+    if (pendingJoin) {
+      sessionStorage.removeItem('joinToken');
+      return <Navigate to={`/join/${pendingJoin}`} replace />;
+    }
+  }
+
   return (
     <Routes>
       <Route path="/login" element={isAuthed ? <Navigate to="/map" replace /> : <AuthPage />} />
+      <Route path="/join/:token" element={<ProtectedRoute><JoinPage /></ProtectedRoute>} />
       <Route
         path="/map"
         element={

@@ -20,8 +20,7 @@ export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTrips
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ title: '', date_start: '', date_end: '' });
-  const [inviteToken, setInviteToken] = useState(null);
-  const [inviteTripId, setInviteTripId] = useState(null);
+  const [inviteState, setInviteState] = useState({}); // { [tripId]: token }
   const [joinCode, setJoinCode] = useState('');
   const [joinMsg, setJoinMsg] = useState('');
   const [showJoin, setShowJoin] = useState(false);
@@ -75,9 +74,10 @@ export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTrips
 
   async function getInvite(e, trip) {
     e.stopPropagation();
-    const { token } = await api.post(`/trips/${trip.id}/invite`);
-    setInviteToken(token);
-    setInviteTripId(trip.id);
+    try {
+      const { token } = await api.post(`/trips/${trip.id}/invite`);
+      setInviteState(s => ({ ...s, [trip.id]: token }));
+    } catch {}
   }
 
   async function submitJoin() {
@@ -91,7 +91,6 @@ export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTrips
     }
   }
 
-  const inviteUrl = inviteToken ? `${window.location.origin}/?join=${inviteToken}` : null;
 
   return (
     <div className="trips-panel">
@@ -112,17 +111,6 @@ export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTrips
             <button className="trip-btn-primary" onClick={submitJoin}>Join</button>
           </div>
           {joinMsg && <p className="trip-join-msg">{joinMsg}</p>}
-        </div>
-      )}
-
-      {inviteToken && inviteTripId && (
-        <div className="trip-invite-box">
-          <p className="trip-invite-hint">Share this code with your partner:</p>
-          <div className="trip-invite-code" onClick={() => navigator.clipboard?.writeText(inviteToken)}>
-            {inviteToken}
-          </div>
-          <p className="trip-invite-hint" style={{ fontSize: '0.68rem' }}>Tap to copy · their contacts appear on your map while the share is active</p>
-          <button className="trip-btn-ghost" style={{ marginTop: 4 }} onClick={() => { setInviteToken(null); setInviteTripId(null); }}>Close</button>
         </div>
       )}
 
@@ -205,9 +193,22 @@ export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTrips
                       : <button className="trip-pick-btn" onClick={() => onStartPick(trip)}>+ Tap dots or map to add</button>
                     }
                   </div>
-                  <button className="trip-end-share-btn" onClick={() => { if (confirm('End the sync for this trip? Partner contacts will disappear from your map.')) onEndShare(trip.id); }}>
-                    End travel sync
-                  </button>
+                  <div className="trip-share-row">
+                    {inviteState[trip.id] ? (
+                      <div className="trip-invite-inline">
+                        <p className="trip-invite-hint">Send this link to your partner:</p>
+                        <div className="trip-invite-code" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/join/${inviteState[trip.id]}`)}>
+                          {window.location.origin}/join/{inviteState[trip.id].slice(0, 8)}…
+                        </div>
+                        <p className="trip-invite-hint">Tap to copy</p>
+                      </div>
+                    ) : (
+                      <button className="trip-end-share-btn" onClick={e => getInvite(e, trip)}>⇗ Invite partner</button>
+                    )}
+                    <button className="trip-end-share-btn" onClick={() => { if (confirm('End the sync? Partner contacts will disappear from your map.')) onEndShare(trip.id); }}>
+                      End sync
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

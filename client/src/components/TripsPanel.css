@@ -432,3 +432,19 @@
 .trip-end-share-btn:hover {
   color: var(--ink);
 }
+
+.trip-share-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.trip-invite-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
