@@ -210,6 +210,15 @@
 .map-dot:hover { transform: scale(1.4); }
 .map-dot-dim { opacity: 0.15; }
 
+.map-dot-shared {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--ink);
+  opacity: 0.45;
+  background: transparent;
+}
+
 /* Your current location — same shape as a contact dot, just red and smaller */
 .map-dot-you {
   width: 4px;

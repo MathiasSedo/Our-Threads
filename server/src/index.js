@@ -10,7 +10,7 @@ import {
   addEncounter, deleteEncounter, listTags, createTag,
   listConnections, createConnection, deleteConnection
 } from './contacts.js';
-import { listTrips, createTrip, updateTrip, deleteTrip, addTripContact, removeTripContact, addWaypoint, removeWaypoint, updateOrder, updateWaypointLabel } from './trips.js';
+import { listTrips, createTrip, updateTrip, deleteTrip, addTripContact, removeTripContact, addWaypoint, removeWaypoint, updateOrder, updateWaypointLabel, inviteToTrip, joinTrip, listSharedContacts, endTripShare } from './trips.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -55,6 +55,10 @@ app.post('/api/trips/:id/waypoints', requireAuth, ah(addWaypoint));
 app.patch('/api/trips/:id/waypoints/:waypointId', requireAuth, ah(updateWaypointLabel));
 app.delete('/api/trips/:id/waypoints/:waypointId', requireAuth, ah(removeWaypoint));
 app.put('/api/trips/:id/order', requireAuth, ah(updateOrder));
+app.post('/api/trips/:id/invite', requireAuth, ah(inviteToTrip));
+app.patch('/api/trips/:id/end-share', requireAuth, ah(endTripShare));
+app.post('/api/trips/join', requireAuth, ah(joinTrip));
+app.get('/api/shared-contacts', requireAuth, ah(listSharedContacts));
 
 // Connections
 app.get('/api/connections', requireAuth, ah(listConnections));

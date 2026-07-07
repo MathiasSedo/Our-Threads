@@ -1,4 +1,5 @@
 import db from './db.js';
+import { randomBytes } from 'crypto';
 
 export async function listTrips(req, res) {
   const trips = await db.prepare('SELECT * FROM trips WHERE user_id = ? ORDER BY date_start DESC, created_at DESC').all(req.userId);
@@ -80,5 +81,54 @@ export async function addWaypoint(req, res) {
 
 export async function removeWaypoint(req, res) {
   await db.prepare('DELETE FROM trip_waypoints WHERE id = ? AND trip_id = ?').run(req.params.waypointId, req.params.id);
+  res.json({ ok: true });
+}
+
+export async function inviteToTrip(req, res) {
+  const trip = await db.prepare('SELECT * FROM trips WHERE id=? AND user_id=?').get(req.params.id, req.userId);
+  if (!trip) return res.status(404).json({ error: 'Trip not found' });
+  let share = await db.prepare('SELECT * FROM trip_shares WHERE trip_id=? AND active=1').get(req.params.id);
+  if (!share) {
+    const token = randomBytes(12).toString('hex');
+    share = await db.prepare('INSERT INTO trip_shares (trip_id, invite_token) VALUES (?, ?) RETURNING *').get(req.params.id, token);
+  }
+  res.json({ token: share.invite_token });
+}
+
+export async function joinTrip(req, res) {
+  const { token } = req.body;
+  const share = await db.prepare('SELECT * FROM trip_shares WHERE invite_token=? AND active=1').get(token);
+  if (!share) return res.status(404).json({ error: 'Invalid or expired invite' });
+  const trip = await db.prepare('SELECT * FROM trips WHERE id=?').get(share.trip_id);
+  if (trip.user_id === req.userId) return res.status(400).json({ error: 'This is your own trip' });
+  if (share.joined_user_id && share.joined_user_id !== req.userId) return res.status(400).json({ error: 'Invite already used' });
+  await db.prepare('UPDATE trip_shares SET joined_user_id=? WHERE id=?').run(req.userId, share.id);
+  res.json({ trip_title: trip.title });
+}
+
+export async function listSharedContacts(req, res) {
+  // Find all users co-traveling with me on an active share
+  const partnerIds = new Set();
+  const asOwner = await db.prepare(
+    'SELECT ts.joined_user_id FROM trip_shares ts JOIN trips t ON t.id=ts.trip_id WHERE t.user_id=? AND ts.joined_user_id IS NOT NULL AND ts.active=1'
+  ).all(req.userId);
+  const asGuest = await db.prepare(
+    'SELECT t.user_id FROM trip_shares ts JOIN trips t ON t.id=ts.trip_id WHERE ts.joined_user_id=? AND ts.active=1'
+  ).all(req.userId);
+  asOwner.forEach(r => partnerIds.add(r.joined_user_id));
+  asGuest.forEach(r => partnerIds.add(r.user_id));
+  if (partnerIds.size === 0) return res.json([]);
+
+  const contacts = [];
+  for (const uid of partnerIds) {
+    const rows = await db.prepare('SELECT * FROM contacts WHERE user_id=?').all(uid);
+    contacts.push(...rows.map(c => ({ ...c, shared: true })));
+  }
+  res.json(contacts);
+}
+
+export async function endTripShare(req, res) {
+  await db.prepare('UPDATE trip_shares SET active=0 WHERE trip_id=? AND (SELECT user_id FROM trips WHERE id=trip_id)=?')
+    .run(req.params.id, req.userId);
   res.json({ ok: true });
 }

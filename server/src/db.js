@@ -120,6 +120,15 @@ export async function initDb() {
       UNIQUE(trip_id, contact_id)
     );
 
+    CREATE TABLE IF NOT EXISTS trip_shares (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+      invite_token TEXT UNIQUE NOT NULL,
+      joined_user_id INTEGER REFERENCES users(id),
+      active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS trip_waypoints (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,

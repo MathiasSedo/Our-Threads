@@ -15,11 +15,16 @@ function mergedStops(trip) {
   return [...contacts, ...waypoints].sort((a, b) => a.order - b.order);
 }
 
-export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTripsChange, onToggleTrip, onStartPick, onStopPick, onClose, onRemoveWaypoint, onReorder }) {
+export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTripsChange, onToggleTrip, onStartPick, onStopPick, onClose, onRemoveWaypoint, onReorder, onEndShare }) {
   const api = useApi();
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ title: '', date_start: '', date_end: '' });
+  const [inviteToken, setInviteToken] = useState(null);
+  const [inviteTripId, setInviteTripId] = useState(null);
+  const [joinCode, setJoinCode] = useState('');
+  const [joinMsg, setJoinMsg] = useState('');
+  const [showJoin, setShowJoin] = useState(false);
 
   function startCreate() {
     setForm({ title: '', date_start: '', date_end: '' });
@@ -68,15 +73,58 @@ export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTrips
     onTripsChange(trips.map(t => t.id === trip.id ? updated : t));
   }
 
+  async function getInvite(e, trip) {
+    e.stopPropagation();
+    const { token } = await api.post(`/trips/${trip.id}/invite`);
+    setInviteToken(token);
+    setInviteTripId(trip.id);
+  }
+
+  async function submitJoin() {
+    if (!joinCode.trim()) return;
+    try {
+      const res = await api.post('/trips/join', { token: joinCode.trim() });
+      setJoinMsg(`Joined "${res.trip_title}" — partner's contacts are now visible on the map.`);
+      setJoinCode('');
+    } catch (err) {
+      setJoinMsg(err.message || 'Invalid code');
+    }
+  }
+
+  const inviteUrl = inviteToken ? `${window.location.origin}/?join=${inviteToken}` : null;
+
   return (
     <div className="trips-panel">
       <div className="trips-header">
         <span className="trips-title">Travels</span>
         <div className="trips-header-actions">
           <button className="trips-new-btn" onClick={startCreate}>+ New</button>
+          <button className="trips-new-btn" onClick={() => { setShowJoin(v => !v); setJoinMsg(''); }}>Join</button>
           <button className="trips-close-btn" onClick={onClose}>×</button>
         </div>
       </div>
+
+      {showJoin && (
+        <div className="trip-join-box">
+          <p className="trip-join-hint">Enter a partner's invite code to sync their contacts during a trip.</p>
+          <div className="trip-join-row">
+            <input className="trip-input" placeholder="Invite code" value={joinCode} onChange={e => setJoinCode(e.target.value)} onKeyDown={e => e.key === 'Enter' && submitJoin()} />
+            <button className="trip-btn-primary" onClick={submitJoin}>Join</button>
+          </div>
+          {joinMsg && <p className="trip-join-msg">{joinMsg}</p>}
+        </div>
+      )}
+
+      {inviteToken && inviteTripId && (
+        <div className="trip-invite-box">
+          <p className="trip-invite-hint">Share this code with your partner:</p>
+          <div className="trip-invite-code" onClick={() => navigator.clipboard?.writeText(inviteToken)}>
+            {inviteToken}
+          </div>
+          <p className="trip-invite-hint" style={{ fontSize: '0.68rem' }}>Tap to copy · their contacts appear on your map while the share is active</p>
+          <button className="trip-btn-ghost" style={{ marginTop: 4 }} onClick={() => { setInviteToken(null); setInviteTripId(null); }}>Close</button>
+        </div>
+      )}
 
       {creating && (
         <form className="trip-form" onSubmit={saveTrip}>
@@ -130,6 +178,7 @@ export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTrips
                   )}
                 </div>
                 <div className="trip-item-actions">
+                  <button className="trip-icon-btn" title="Invite partner" onClick={e => getInvite(e, trip)}>⇗</button>
                   <button className="trip-icon-btn" onClick={e => startEdit(e, trip)}>✎</button>
                   <button className="trip-icon-btn" onClick={e => deleteTrip(e, trip.id)}>×</button>
                 </div>
@@ -146,9 +195,7 @@ export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTrips
                       <span className={`trip-contact-name${stop.type === 'waypoint' ? ' trip-waypoint-name' : ''}`}>{stop.name}</span>
                       {stop.sub && <span className="trip-contact-city">{stop.sub}</span>}
                       <button className="trip-icon-btn" onClick={() =>
-                        stop.type === 'contact'
-                          ? removeContact(trip, stop.id)
-                          : removeWaypoint(trip, stop.id)
+                        stop.type === 'contact' ? removeContact(trip, stop.id) : removeWaypoint(trip, stop.id)
                       }>×</button>
                     </div>
                   ))}
@@ -158,6 +205,9 @@ export default function TripsPanel({ trips, activeTripIds, tripPickMode, onTrips
                       : <button className="trip-pick-btn" onClick={() => onStartPick(trip)}>+ Tap dots or map to add</button>
                     }
                   </div>
+                  <button className="trip-end-share-btn" onClick={() => { if (confirm('End the sync for this trip? Partner contacts will disappear from your map.')) onEndShare(trip.id); }}>
+                    End travel sync
+                  </button>
                 </div>
               )}
             </div>

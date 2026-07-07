@@ -72,6 +72,7 @@ export default function MapPage() {
   const [manualCoords, setManualCoords] = useState(null);
   const [savedForm, setSavedForm] = useState(null);
   const [trips, setTrips] = useState([]);
+  const [sharedContacts, setSharedContacts] = useState([]);
   const [activeTripIds, setActiveTripIds] = useState(new Set());
   const [showTrips, setShowTrips] = useState(false);
   const [tripPickMode, setTripPickMode] = useState(false);
@@ -81,6 +82,7 @@ export default function MapPage() {
 
   useEffect(() => {
     api.get('/trips').then(ts => setTrips(ts || [])).catch(() => {});
+    api.get('/shared-contacts').then(cs => setSharedContacts(cs || [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -132,7 +134,7 @@ export default function MapPage() {
     };
   }, [loading]);
 
-  useEffect(() => { updateMarkers(); }, [contacts, activeTag]);
+  useEffect(() => { updateMarkers(); }, [contacts, sharedContacts, activeTag]);
   useEffect(() => { updateMarkersRef.current = updateMarkers; });
 
   // Redraw polylines whenever trips data or active set changes
@@ -298,6 +300,28 @@ export default function MapPage() {
         const label = contact.home_city || contact.city;
         const cityIcon = L.divIcon({
           html: `<div class="map-label-city${!isVis ? ' map-label-dim' : ''}">${label}</div>`,
+          className: '', iconSize: [120, 16], iconAnchor: [-8, -2],
+        });
+        markersRef.current.push(L.marker([pinLat, pinLng], { icon: cityIcon, interactive: false }).addTo(leafletRef.current));
+      }
+    });
+
+    // Shared (partner) contacts — faint guest dots
+    sharedContacts.forEach(contact => {
+      const pinLat = contact.home_lat || contact.lat;
+      const pinLng = contact.home_lng || contact.lng;
+      if (!pinLat || !pinLng) return;
+      const dot = L.divIcon({
+        html: `<div class="map-dot map-dot-shared"></div>`,
+        className: '', iconSize: [10, 10], iconAnchor: [5, 5],
+      });
+      const marker = L.marker([pinLat, pinLng], { icon: dot }).addTo(leafletRef.current);
+      marker.on('click', () => setSelected([{ ...contact, _shared: true }]));
+      markersRef.current.push(marker);
+      if (showCityLabels) {
+        const label = contact.home_city || contact.city;
+        const cityIcon = L.divIcon({
+          html: `<div class="map-label-city map-label-dim">${label}</div>`,
           className: '', iconSize: [120, 16], iconAnchor: [-8, -2],
         });
         markersRef.current.push(L.marker([pinLat, pinLng], { icon: cityIcon, interactive: false }).addTo(leafletRef.current));
@@ -511,6 +535,10 @@ export default function MapPage() {
           onStopPick={stopTripPick}
           onClose={() => { setShowTrips(false); stopTripPick(); }}
           onReorder={handleReorder}
+          onEndShare={async (tripId) => {
+            await api.patch(`/trips/${tripId}/end-share`).catch(() => {});
+            setSharedContacts([]);
+          }}
           onRemoveWaypoint={(tripId, waypointId) => {
             setTrips(prev => prev.map(t => t.id === tripId
               ? { ...t, waypoints: t.waypoints.filter(w => w.id !== waypointId) }
