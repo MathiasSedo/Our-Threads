@@ -203,6 +203,11 @@ export default function ContactCard({ contact, allContacts = [], connections = [
                           <ul className="connection-dropdown">
                             {available
                               .filter(c => c.name.toLowerCase().includes(connectSearch.toLowerCase()))
+                              .sort((a, b) => {
+                                const aMatch = a.country === contact.country;
+                                const bMatch = b.country === contact.country;
+                                return bMatch - aMatch;
+                              })
                               .map(c => (
                                 <li
                                   key={c.id}
