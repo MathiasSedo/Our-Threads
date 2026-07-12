@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi.js';
 import TagPill from './TagPill.jsx';
 import AutocompleteInput from './AutocompleteInput.jsx';
 import { getCountrySuggestions, getCitySuggestions, lookupCoords } from '../hooks/useGeo.js';
 import { geocodeCandidates } from '../utils/geocode.js';
+import { compressImage } from '../utils/compressImage.js';
 import './ContactForm.css';
 
 const CORE_TAGS = ['Visit', 'Work', 'Family', 'Invite for wedding'];
@@ -34,6 +35,8 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
   const [connectSelect, setConnectSelect] = useState('');
   const [connectSearch, setConnectSearch] = useState('');
   const [connectOpen, setConnectOpen] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState([]); // [{ file, previewUrl }]
+  const fileInputRef = useRef(null);
 
   const isNew = !initial.id;
   const connectAvailable = allContacts.filter(c => !connectTo.some(t => t.id === c.id));
@@ -169,6 +172,13 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
           } catch { /* already connected or invalid — skip */ }
         }
         if (created.length) onConnectionsCreated?.(created);
+      }
+
+      for (const { file } of pendingFiles) {
+        try {
+          const { data, mime_type } = await compressImage(file);
+          await api.post(`/contacts/${result.id}/files`, { filename: file.name, mime_type, data });
+        } catch {}
       }
 
       onSave({
@@ -367,6 +377,30 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
       )}
 
       {error && <p className="form-error">{error}</p>}
+
+      <div className="form-file-row">
+        {pendingFiles.map((pf, i) => (
+          <div key={i} className="form-file-thumb">
+            {pf.file.type.startsWith('image/') ? (
+              <img src={pf.previewUrl} alt={pf.file.name} />
+            ) : (
+              <span className="form-file-name">{pf.file.name}</span>
+            )}
+            <button type="button" className="card-file-del" onClick={() => {
+              URL.revokeObjectURL(pf.previewUrl);
+              setPendingFiles(fs => fs.filter((_, j) => j !== i));
+            }}>×</button>
+          </div>
+        ))}
+        <button type="button" className="card-file-add" onClick={() => fileInputRef.current?.click()}>+</button>
+        <input ref={fileInputRef} type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={e => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          e.target.value = '';
+          const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : '';
+          setPendingFiles(fs => [...fs, { file, previewUrl }]);
+        }} />
+      </div>
 
       <div className="form-actions">
         {onCancel && (
