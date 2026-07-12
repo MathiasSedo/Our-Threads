@@ -145,9 +145,20 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
     setLocationOptions(null);
     setSaving(true);
     try {
+      const body = {
+        name: form.name,
+        city: form.city,
+        country: form.country,
+        home_city: form.home_city,
+        home_country: form.home_country,
+        date_met: form.date_met,
+        how_we_met: form.how_we_met,
+        contact_info: form.contact_info,
+        tags: (form.tags || []).filter(t => typeof t === 'string'),
+      };
       const result = initial.id
-        ? await api.put(`/contacts/${initial.id}`, form)
-        : await api.post('/contacts', form);
+        ? await api.put(`/contacts/${initial.id}`, body)
+        : await api.post('/contacts', body);
       api.patch(`/contacts/${result.id}/location`, coords).catch(() => {});
       // Cache city → coords so future contacts can find non-dataset cities
       if (form.city) {
