@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TagPill from './TagPill.jsx';
 import ContactForm from './ContactForm.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { TAG_COLORS, blendTagColor } from '../utils/tagColors.js';
+import { compressImage } from '../utils/compressImage.js';
 import './ContactCard.css';
 
 function formatDate(d) {
@@ -47,6 +48,14 @@ export default function ContactCard({ contact, allContacts = [], connections = [
   const [connectingTo, setConnectingTo] = useState('');
   const [connectSearch, setConnectSearch] = useState('');
   const [connectOpen, setConnectOpen] = useState(false);
+  const [files, setFiles] = useState([]);
+  const [lightbox, setLightbox] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (open) api.get(`/contacts/${contact.id}/files`).then(setFiles).catch(() => {});
+  }, [open, contact.id]);
 
   const myConnections = connections.filter(
     cn => cn.contact_id_1 === contact.id || cn.contact_id_2 === contact.id
@@ -226,6 +235,36 @@ export default function ContactCard({ contact, allContacts = [], connections = [
                   )}
                 </div>
 
+                <div className="card-files">
+                  {files.map(f => (
+                    <div key={f.id} className="card-file-thumb" onClick={() => setLightbox(f)}>
+                      {f.mime_type.startsWith('image/') ? (
+                        <img src={`/api/contacts/${contact.id}/files/${f.id}`} alt={f.filename} />
+                      ) : (
+                        <span className="card-file-icon">📎 {f.filename}</span>
+                      )}
+                      <button className="card-file-del" onClick={e => {
+                        e.stopPropagation();
+                        api.del(`/contacts/${contact.id}/files/${f.id}`).then(() => setFiles(fs => fs.filter(x => x.id !== f.id)));
+                      }}>×</button>
+                    </div>
+                  ))}
+                  <button className="card-file-add" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                    {uploading ? '…' : '+'}
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={async e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    e.target.value = '';
+                    setUploading(true);
+                    try {
+                      const { data, mime_type } = await compressImage(file);
+                      const row = await api.post(`/contacts/${contact.id}/files`, { filename: file.name, mime_type, data });
+                      setFiles(fs => [...fs, row]);
+                    } finally { setUploading(false); }
+                  }} />
+                </div>
+
                 <div className="card-actions">
                   <button className="btn-ghost" onClick={() => navigate(`/map?contact=${contact.id}`)}>View on map</button>
                   <button className="btn-ghost" onClick={() => setEditing(true)}>Edit</button>
@@ -236,6 +275,19 @@ export default function ContactCard({ contact, allContacts = [], connections = [
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {lightbox && (
+        <div className="card-lightbox" onClick={() => setLightbox(null)}>
+          {lightbox.mime_type.startsWith('image/') ? (
+            <img src={`/api/contacts/${contact.id}/files/${lightbox.id}`} alt={lightbox.filename} onClick={e => e.stopPropagation()} />
+          ) : (
+            <a href={`/api/contacts/${contact.id}/files/${lightbox.id}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>
+              {lightbox.filename}
+            </a>
+          )}
+          <button className="lightbox-close" onClick={() => setLightbox(null)}>×</button>
         </div>
       )}
     </>

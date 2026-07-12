@@ -10,6 +10,7 @@ import {
   addEncounter, deleteEncounter, listTags, createTag,
   listConnections, createConnection, deleteConnection
 } from './contacts.js';
+import { listFiles, getFile, uploadFile, deleteFile } from './files.js';
 import { listTrips, createTrip, updateTrip, deleteTrip, addTripContact, removeTripContact, addWaypoint, removeWaypoint, updateOrder, updateWaypointLabel, inviteToTrip, joinTrip, listSharedContacts, endTripShare } from './trips.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -35,6 +36,12 @@ app.put('/api/contacts/:id', requireAuth, ah(updateContact));
 app.patch('/api/contacts/:id/location', requireAuth, ah(updateContactLocation));
 app.patch('/api/contacts/:id/home-location', requireAuth, ah(updateContactHomeLocation));
 app.delete('/api/contacts/:id', requireAuth, ah(deleteContact));
+
+// Files
+app.get('/api/contacts/:id/files', requireAuth, ah(listFiles));
+app.get('/api/contacts/:id/files/:fileId', requireAuth, ah(getFile));
+app.post('/api/contacts/:id/files', requireAuth, ah(uploadFile));
+app.delete('/api/contacts/:id/files/:fileId', requireAuth, ah(deleteFile));
 
 // Encounters
 app.post('/api/contacts/:id/encounters', requireAuth, ah(addEncounter));
