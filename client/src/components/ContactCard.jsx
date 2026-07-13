@@ -285,9 +285,9 @@ export default function ContactCard({ contact, allContacts = [], connections = [
       {lightbox && (
         <div className="card-lightbox" onClick={() => setLightbox(null)}>
           {lightbox.mime_type.startsWith('image/') ? (
-            <img src={`/api/contacts/${contact.id}/files/${lightbox.id}`} alt={lightbox.filename} onClick={e => e.stopPropagation()} />
+            <img src={`/api/contacts/${contact.id}/files/${lightbox.id}?token=${token}`} alt={lightbox.filename} onClick={e => e.stopPropagation()} />
           ) : (
-            <a href={`/api/contacts/${contact.id}/files/${lightbox.id}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>
+            <a href={`/api/contacts/${contact.id}/files/${lightbox.id}?token=${token}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>
               {lightbox.filename}
             </a>
           )}
