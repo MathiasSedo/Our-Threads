@@ -38,9 +38,10 @@ export async function login(req, res) {
 
 export function requireAuth(req, res, next) {
   const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) return res.status(401).json({ error: 'Not authenticated' });
+  const raw = header?.startsWith('Bearer ') ? header.slice(7) : req.query.token;
+  if (!raw) return res.status(401).json({ error: 'Not authenticated' });
   try {
-    const payload = jwt.verify(header.slice(7), SECRET);
+    const payload = jwt.verify(raw, SECRET);
     req.userId = payload.userId;
     next();
   } catch {

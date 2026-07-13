@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import TagPill from './TagPill.jsx';
 import ContactForm from './ContactForm.jsx';
 import { useApi } from '../hooks/useApi.js';
+import { useAuth } from '../hooks/useAuth.jsx';
 import { TAG_COLORS, blendTagColor } from '../utils/tagColors.js';
 import { compressImage } from '../utils/compressImage.js';
 import './ContactCard.css';
@@ -15,6 +16,7 @@ function formatDate(d) {
 
 export default function ContactCard({ contact, allContacts = [], connections = [], onUpdate, onDelete, onConnectionChange, autoOpen = false, hideTile = false, onClose }) {
   const api = useApi();
+  const { token } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -239,7 +241,7 @@ export default function ContactCard({ contact, allContacts = [], connections = [
                   {files.map(f => (
                     <div key={f.id} className="card-file-thumb" onClick={() => setLightbox(f)}>
                       {f.mime_type.startsWith('image/') ? (
-                        <img src={`/api/contacts/${contact.id}/files/${f.id}`} alt={f.filename} />
+                        <img src={`/api/contacts/${contact.id}/files/${f.id}?token=${token}`} alt={f.filename} />
                       ) : (
                         <span className="card-file-icon">📎 {f.filename}</span>
                       )}
