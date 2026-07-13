@@ -22,7 +22,7 @@ const app = express();
 const ah = fn => (req, res, next) => fn(req, res, next).catch(next);
 
 app.use(cors({ origin: process.env.NODE_ENV === 'production' ? true : 'http://localhost:5173', credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Auth
 app.post('/api/auth/register', ah(register));
