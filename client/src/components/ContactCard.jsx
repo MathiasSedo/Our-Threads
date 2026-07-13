@@ -261,6 +261,8 @@ export default function ContactCard({ contact, allContacts = [], connections = [
                       const { data, mime_type } = await compressImage(file);
                       const row = await api.post(`/contacts/${contact.id}/files`, { filename: file.name, mime_type, data });
                       setFiles(fs => [...fs, row]);
+                    } catch (err) {
+                      alert('Upload failed: ' + (err.message || 'unknown error'));
                     } finally { setUploading(false); }
                   }} />
                 </div>
