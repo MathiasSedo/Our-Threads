@@ -170,8 +170,10 @@ export default function ContactForm({ initial = {}, onSave, onCancel, onStartPin
       }
 
       const { lookupCoords } = await import('../hooks/useGeo.js');
+      const existingHomeCoords = (initial.home_lat && initial.home_lng) ? { lat: initial.home_lat, lng: initial.home_lng } : null;
       const homeCoords = suggestedHomeCoords
-        || ((form.home_city && form.home_country) ? lookupCoords(form.home_city, form.home_country) : null);
+        || ((form.home_city && form.home_country) ? lookupCoords(form.home_city, form.home_country) : null)
+        || (form.home_city === initial.home_city ? existingHomeCoords : null);
       api.patch(`/contacts/${result.id}/home-location`, homeCoords ?? { lat: null, lng: null }).catch(() => {});
 
       if (connectTo.length) {
